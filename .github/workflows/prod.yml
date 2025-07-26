@@ -21,8 +21,6 @@ jobs:
       uses: actions/cache@v3
       with:
         path: |
-          app-service/.cargo
-          app-service/target/
           auth-service/.cargo
           auth-service/target/
         key: ${{ runner.os }}-cargo-${{ hashFiles('**/Cargo.lock') }}
@@ -30,12 +28,6 @@ jobs:
 
     - name: Install Rust
       run: rustup update stable && rustup default stable
-
-    - name: Build and test app-service code
-      working-directory: ./app-service
-      run: |
-        cargo build --verbose
-        cargo test --verbose
 
     - name: Build and test auth-service code
       working-directory: ./auth-service
@@ -58,8 +50,7 @@ jobs:
       with:
         push: true
         files: |
-          compose.yml
-          compose.override.yml
+          auth-compose.yml
         set: |
           *.cache-from=type=gha
           *.cache-to=type=gha,mode=max
@@ -81,8 +72,8 @@ jobs:
     - name: Install sshpass
       run: sudo apt-get install sshpass
 
-    - name: Copy compose.yml to droplet
-      run: sshpass -v -p '${{ secrets.DROPLET_PASSWORD }}' scp -o StrictHostKeyChecking=no compose.yml root@${{ vars.DROPLET_IP }}:~
+    - name: Copy auth-compose.yml to droplet
+      run: sshpass -v -p '${{ secrets.DROPLET_PASSWORD }}' scp -o StrictHostKeyChecking=no auth-compose.yml root@${{ vars.DROPLET_IP }}:~
 
     - name: Deploy
       uses: appleboy/ssh-action@master
@@ -94,5 +85,4 @@ jobs:
           cd ~
           export AUTH_SERVICE_IP=${{ vars.DROPLET_IP }}
           docker compose down
-          docker compose pull
-          docker compose up -d
+          docker compose -f auth-compose.yml -f app-compose.yml -f compose.yml up -d --pull always
