@@ -32,7 +32,7 @@ async fn should_return_422_if_password_empty() {
     );
 }
 #[tokio::test]
-async fn should_return_200_if_fields_are_sent() {
+async fn should_return_201_if_fields_are_sent() {
     let app = TestApp::new().await;
 
     let random_email = get_random_email();
@@ -42,6 +42,6 @@ async fn should_return_200_if_fields_are_sent() {
     let response = app.signup(random_email, password, requires_mfa).await;
     assert_eq!(
         response.status().as_u16(),
-        200
+        201
     );
 }

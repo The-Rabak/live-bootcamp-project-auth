@@ -3,13 +3,17 @@ use tower_http::services::ServeDir;
 use axum_server::bind;
 use std::{error::Error, future::Future, pin::Pin};
 use routes::{login, logout, signup, verify_mfa, verify_token};
+use app_state::AppState;
 
 pub mod routes;
 pub mod dtos;
+pub mod domain;
+pub mod app_state;
+pub mod services;
 
 type ServerFuture = Pin<Box<dyn Future<Output = Result<(), std::io::Error>> + Send>>;
 
-pub fn app_router() -> Router {
+pub fn app_router(app_state: AppState) -> Router {
     Router::new()
         .nest_service("/", ServeDir::new("assets"))
         .route("/signup", post(signup::signup))
@@ -17,6 +21,7 @@ pub fn app_router() -> Router {
         .route("/verify-2fa", post(verify_mfa::verify_mfa))
         .route("/logout", post(logout::logout))
         .route("/verify-token", post(verify_token::verify_token))
+        .with_state(app_state)
 }
 
 // This struct encapsulates our application-related logic.
@@ -29,9 +34,9 @@ pub struct Application {
 
 impl Application {
 
-    pub async fn build(address: &str) -> Result<Self, Box<dyn Error>> {
+    pub async fn build(app_state: AppState, address: &str) -> Result<Self, Box<dyn Error>> {
 
-        let router = app_router();
+        let router = app_router(app_state);
 
         let http_future = bind(address.parse()?)
             .serve(router.into_make_service());

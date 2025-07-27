@@ -1,9 +1,15 @@
 use auth_service::Application;
+use auth_service::services::hashmap_user_store::HashmapUserStore;
+use auth_service::app_state::AppState;
+use std::sync::Arc;
+use tokio::sync::RwLock;
 
 #[tokio::main]
 async fn main() {
     env_logger::init();
-    let app = Application::build("0.0.0.0:3000")
+    let user_store = HashmapUserStore::new();
+    let app_state = AppState::new(Arc::new(RwLock::new(user_store)));
+    let app = Application::build(app_state, "0.0.0.0:3000")
         .await
         .expect("Failed to build app");
 

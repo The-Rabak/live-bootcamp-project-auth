@@ -7,8 +7,11 @@ use reqwest::Client;
 use auth_service::app_router;
 use uuid::Uuid;
 
+use std::sync::Arc;
+use tokio::sync::RwLock;
 use auth_service::dtos::SignupRequestBody;
-
+use auth_service::services::hashmap_user_store::HashmapUserStore;
+use auth_service::app_state::AppState;
 #[derive(Serialize)]
 pub struct LoginBody {
     pub email: String,
@@ -45,6 +48,8 @@ pub struct TestApp {
 
 impl TestApp {
     pub async fn new() -> Self {
+        let user_store = HashmapUserStore::new();
+        let app_state = AppState::new(Arc::new(RwLock::new(user_store)));
         let listener = TcpListener::bind("127.0.0.1:0")
             .await
             .expect("failed binding to an ephemeral port");
@@ -52,7 +57,7 @@ impl TestApp {
         let port = listener.local_addr().unwrap().port();
         let address = format!("http://127.0.0.1:{}", port);
 
-        let server = axum::serve(listener, app_router());
+        let server = axum::serve(listener, app_router(app_state));
 
         spawn(async move {
             if let Err(e) = server.await {
