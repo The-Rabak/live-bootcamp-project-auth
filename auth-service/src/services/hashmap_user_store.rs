@@ -1,14 +1,9 @@
 use std::collections::HashMap;
+use std::hash::Hash;
 
 use crate::domain::User;
-
-#[derive(Debug, PartialEq)]
-pub enum UserStoreError {
-    UserAlreadyExists,
-    UserNotFound,
-    InvalidCredentials,
-    UnexpectedError,
-}
+use crate::domain::data_stores::UserStoreError;
+use crate::domain::data_stores::UserStore;
 
 pub struct HashmapUserStore {
     users: HashMap<String, User>,
@@ -21,7 +16,16 @@ impl HashmapUserStore {
             users: HashMap::new()
         }
     }
-    pub fn add_user(&mut self, user: User) -> Result<(), UserStoreError> {
+
+    pub fn get_user_count(&self) -> usize {
+        self.users.len()
+    }
+
+}
+
+#[async_trait::async_trait]
+impl UserStore for HashmapUserStore {
+    async fn add_user(&mut self, user: User) -> Result<(), UserStoreError> {
         if let Some(user) = self.users.get(&user.email) {
             return Err(UserStoreError::UserAlreadyExists);
         }
@@ -29,22 +33,18 @@ impl HashmapUserStore {
         Ok(())
     }
 
-    pub fn get_user(&self, email: &str) -> Option<&User> {
-        self.users.get(email)
+    async fn get_user(&self, email: &str) -> Result<&User, UserStoreError> {
+        self.users.get(email).ok_or(UserStoreError::UserNotFound)
     }
 
-    pub fn validate_user(&self, email: &str, password: &str) -> Result<(), UserStoreError> {
-        if let Some(user) = self.get_user(email) {
+    async fn validate_user(&self, email: &str, password: &str) -> Result<bool, UserStoreError> {
+        if let Some(user) = self.get_user(email).await.ok() {
             if user.email == email && user.password == password {
-                return Ok(());
+                return Ok(true);
             }
             return Err(UserStoreError::InvalidCredentials);
         }
         Err(UserStoreError::UserNotFound)
-    }
-
-    pub fn get_user_count(&self) -> usize {
-        self.users.len()
     }
 
 }
@@ -57,7 +57,7 @@ mod tests {
     async fn test_add_user() {
         let mut hashmap_user_store = HashmapUserStore::new();
         let user = User::new("lads@tst.com".to_string(), "lads123!".to_string(), false);
-        let result = hashmap_user_store.add_user(user);
+        let result = hashmap_user_store.add_user(user).await;
         assert_eq!(Ok(()), result);
         assert_eq!(1 as usize, hashmap_user_store.get_user_count());
     }
@@ -67,16 +67,16 @@ mod tests {
         let mut hashmap_user_store = HashmapUserStore::new();
         let user = User::new("lads@tst.com".to_string(), "lads123!".to_string(), false);
         let user_validation = User::new("lads@tst.com".to_string(), "lads123!".to_string(), false);
-        let _ = hashmap_user_store.add_user(user);
-        let retrieved_user = hashmap_user_store.get_user("lads@tst.com");
-        assert_eq!(Some(&user_validation), retrieved_user);
+        let _ = hashmap_user_store.add_user(user).await;
+        let retrieved_user = hashmap_user_store.get_user("lads@tst.com").await;
+        assert_eq!(Ok(&user_validation), retrieved_user);
     }
 
     #[tokio::test]
     async fn test_validate_user() {
         let mut hashmap_user_store = HashmapUserStore::new();
         let user = User::new("lads@tst.com".to_string(), "lads123!".to_string(), false);
-        let _ = hashmap_user_store.add_user(user);
-        assert_eq!(Ok(()), hashmap_user_store.validate_user("lads@tst.com", "lads123!"));
+        let _ = hashmap_user_store.add_user(user).await;
+        assert_eq!(Ok(true), hashmap_user_store.validate_user("lads@tst.com", "lads123!").await);
     }
 }

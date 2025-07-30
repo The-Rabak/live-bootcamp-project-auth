@@ -11,6 +11,12 @@ pub enum SignupError {
 
     #[error("password must be at least {0} characters long")]
     PasswordTooShort(usize),
+
+    #[error("Something went wrong, please try again later.")]
+    InternalServerError,
+
+    #[error("User with email {0} already exists.")]
+    UserAlreadyExists(String),
 }
 
 impl IntoResponse for SignupError {
@@ -19,6 +25,8 @@ impl IntoResponse for SignupError {
             SignupError::Json(_) => StatusCode::BAD_REQUEST,
             SignupError::InvalidEmail => StatusCode::BAD_REQUEST,
             SignupError::PasswordTooShort(_) => StatusCode::BAD_REQUEST,
+            SignupError::InternalServerError => StatusCode::INTERNAL_SERVER_ERROR,
+            SignupError::UserAlreadyExists(_) => StatusCode::CONFLICT,
         };
 
         (status, self.to_string()).into_response()

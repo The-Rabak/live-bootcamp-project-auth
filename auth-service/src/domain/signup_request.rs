@@ -1,4 +1,4 @@
-use serde::{Serialize, Serializer, Deserialize};
+use serde::{Serialize, Deserialize};
 
 #[derive(Deserialize, Serialize, Debug)]
 pub struct SignupRequestBody {
