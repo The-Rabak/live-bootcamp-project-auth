@@ -6,10 +6,11 @@ use routes::{login, logout, signup, verify_mfa, verify_token};
 use app_state::AppState;
 
 pub mod routes;
-pub mod dtos;
+pub mod validation;
 pub mod domain;
 pub mod app_state;
 pub mod services;
+pub mod errors;
 
 type ServerFuture = Pin<Box<dyn Future<Output = Result<(), std::io::Error>> + Send>>;
 

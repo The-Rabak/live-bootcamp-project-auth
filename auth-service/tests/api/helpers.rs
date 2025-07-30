@@ -9,7 +9,7 @@ use uuid::Uuid;
 
 use std::sync::Arc;
 use tokio::sync::RwLock;
-use auth_service::dtos::SignupRequestBody;
+use auth_service::domain::SignupRequestBody;
 use auth_service::services::hashmap_user_store::HashmapUserStore;
 use auth_service::app_state::AppState;
 #[derive(Serialize)]

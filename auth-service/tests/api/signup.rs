@@ -1,7 +1,7 @@
 use crate::helpers::{TestApp, get_random_email};
 
 #[tokio::test]
-async fn should_return_422_if_email_empty() {
+async fn should_return_400_if_email_empty() {
     let app = TestApp::new().await;
 
     let empty_email = String::new();
@@ -11,13 +11,13 @@ async fn should_return_422_if_email_empty() {
     let response = app.signup(empty_email, password, requires_mfa).await;
     assert_eq!(
         response.status().as_u16(),
-        422,
+        400,
         "Invalid email"
     );
 }
 
 #[tokio::test]
-async fn should_return_422_if_password_empty() {
+async fn should_return_400_if_password_empty() {
     let app = TestApp::new().await;
 
     let empty_email = get_random_email();
@@ -27,7 +27,7 @@ async fn should_return_422_if_password_empty() {
     let response = app.signup(empty_email, password, requires_mfa).await;
     assert_eq!(
         response.status().as_u16(),
-        422,
+        400,
         "Password is too short"
     );
 }
