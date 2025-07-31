@@ -37,7 +37,7 @@ async fn should_return_201_if_fields_are_sent() {
     let app = TestApp::new().await;
 
     let random_email = get_random_email();
-    let password = String::from("ilads123!");
+    let password = String::from("Ilads123!");
     let requires_mfa = true;
 
     let response = app.signup(random_email, password, requires_mfa).await;
@@ -65,7 +65,7 @@ async fn should_return_409_if_email_already_exists() {
     // Call the signup route twice. The second request should fail with a 409 HTTP status code
     let app = TestApp::new().await;
     let random_email = get_random_email();
-    let password = String::from("ilads123!");
+    let password = String::from("Ilads123!");
 
     // First signup attempt
     let response = app.signup(random_email.clone(), password.clone(), true).await;

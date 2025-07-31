@@ -1,7 +1,8 @@
 use axum::{http::StatusCode, response::IntoResponse, Json};
 use axum::extract::State;
 use crate::app_state::AppState;
-use crate::domain::{SignupRequestBody, SignupResponse, User};
+use crate::domain::email::Email;
+use crate::domain::{Password, SignupRequestBody, SignupResponse, User};
 use crate::errors::SignupError;
 use crate::validation::is_valid_email;
 use crate::domain::data_stores::UserStoreError;
@@ -13,19 +14,15 @@ pub async fn signup(State(state): State<AppState>, Json(request): Json<SignupReq
         return Err(SignupError::InvalidEmail);
     }
 
-    // validate password length
-    let min_len = 8;
-    if request.password.len() < min_len {
-        return Err(SignupError::PasswordTooShort(min_len));
-    }
+    let email = Email::parse(request.email).or(Err(SignupError::InvalidEmail))?;
+    let password = Password::parse(request.password).or(Err(SignupError::InvalidPassword))?;
 
     let mut user_store = state.user_store.write().await;
 
-    let _user = user_store.add_user(
-        User::new(request.email.clone(), request.password.clone(), request.requires_mfa)
-    ).await.map_err(|e| {
+
+    let _user = user_store.add_user(User::new(email.clone(), password, request.requires_mfa)).await.map_err(|e| {
         match e {
-            UserStoreError::UserAlreadyExists => SignupError::UserAlreadyExists(request.email.clone()),
+            UserStoreError::UserAlreadyExists => SignupError::UserAlreadyExists(email.as_ref().to_string()),
             _ => SignupError::InternalServerError,
         }
     })?;

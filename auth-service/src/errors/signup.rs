@@ -9,8 +9,8 @@ pub enum SignupError {
     #[error("invalid email address")]
     InvalidEmail,
 
-    #[error("password must be at least {0} characters long")]
-    PasswordTooShort(usize),
+    #[error("password must be at least 8 characters long, contain at least one uppercase letter and one special character.")]
+    InvalidPassword,
 
     #[error("Something went wrong, please try again later.")]
     InternalServerError,
@@ -24,7 +24,7 @@ impl IntoResponse for SignupError {
         let status = match self {
             SignupError::Json(_) => StatusCode::BAD_REQUEST,
             SignupError::InvalidEmail => StatusCode::BAD_REQUEST,
-            SignupError::PasswordTooShort(_) => StatusCode::BAD_REQUEST,
+            SignupError::InvalidPassword => StatusCode::BAD_REQUEST,
             SignupError::InternalServerError => StatusCode::INTERNAL_SERVER_ERROR,
             SignupError::UserAlreadyExists(_) => StatusCode::CONFLICT,
         };

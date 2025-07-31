@@ -1,13 +1,15 @@
+use super::{email::Email, password::Password};
+
 #[derive(PartialEq, Debug)]
 pub struct User {
-    pub email: String,
-    pub password: String,
+    pub email: Email,
+    pub password: Password,
     pub requires_mfa: bool,
 }
 
 impl User {
-    pub fn new(email: String, password: String, requires_mfa: bool) -> User {
-        User{
+    pub fn new(email: Email, password: Password, requires_mfa: bool) -> Self {
+        User {
             email,
             password,
             requires_mfa,
