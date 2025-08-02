@@ -39,6 +39,10 @@ impl UserStore for HashmapUserStore {
         self.users.get(&email).ok_or(UserStoreError::UserNotFound)
     }
 
+    async fn delete_user(&mut self, email: Email) -> Result<User, UserStoreError> {
+        self.users.remove(&email).ok_or(UserStoreError::UserNotFound)
+    }
+
     async fn validate_user(&self, email: Email, password: Password) -> Result<bool, UserStoreError> {
         if let Some(user) = self.get_user(email.clone()).await.ok() {
             if user.email == email && user.password == password {
@@ -72,6 +76,17 @@ mod tests {
         let _ = hashmap_user_store.add_user(user).await;
         let retrieved_user = hashmap_user_store.get_user(Email::parse("lads@tst.com".to_string()).unwrap()).await;
         assert_eq!(Ok(&user_validation), retrieved_user);
+    }
+
+    #[tokio::test]
+    async fn test_delete_user() {
+        let mut hashmap_user_store = HashmapUserStore::new();
+        let user = User::new(Email::parse("lads@tst.com".to_string()).unwrap(), Password::parse("Lads123!".to_string()).unwrap(), false);
+        let user_validation = User::new(Email::parse("lads@tst.com".to_string()).unwrap(), Password::parse("Lads123!".to_string()).unwrap(), false);
+        let _ = hashmap_user_store.add_user(user).await;
+        let retrieved_user = hashmap_user_store.delete_user(Email::parse("lads@tst.com".to_string()).unwrap()).await;
+        assert_eq!(Ok(user_validation), retrieved_user);
+        assert_eq!(0 as usize, hashmap_user_store.get_user_count());
     }
 
     #[tokio::test]

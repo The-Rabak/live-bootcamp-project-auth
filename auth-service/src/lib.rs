@@ -1,8 +1,8 @@
-use axum::{routing::post, Router};
+use axum::{routing::{delete, post}, Router};
 use tower_http::services::ServeDir;
 use axum_server::bind;
 use std::{error::Error, future::Future, pin::Pin};
-use routes::{login, logout, signup, verify_mfa, verify_token};
+use routes::{login, logout, signup, verify_mfa, verify_token, delete_account};
 use app_state::AppState;
 
 pub mod routes;
@@ -22,6 +22,7 @@ pub fn app_router(app_state: AppState) -> Router {
         .route("/verify-2fa", post(verify_mfa::verify_mfa))
         .route("/logout", post(logout::logout))
         .route("/verify-token", post(verify_token::verify_token))
+        .route("/delete-account", delete(delete_account::delete_account))
         .with_state(app_state)
 }
 
