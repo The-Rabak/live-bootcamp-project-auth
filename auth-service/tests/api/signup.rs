@@ -1,4 +1,4 @@
-use crate::helpers::{TestApp, get_random_email};
+use crate::helpers::{get_random_email, TestApp};
 use auth_service::{domain::signup_response::SignupResponse, errors::SignupError};
 
 #[tokio::test]
@@ -10,11 +10,7 @@ async fn should_return_400_if_email_empty() {
     let requires_mfa = true;
 
     let response = app.signup(empty_email, password, requires_mfa).await;
-    assert_eq!(
-        response.status().as_u16(),
-        400,
-        "Invalid email"
-    );
+    assert_eq!(response.status().as_u16(), 400, "Invalid email");
 }
 
 #[tokio::test]
@@ -26,11 +22,7 @@ async fn should_return_400_if_password_empty() {
     let requires_mfa = true;
 
     let response = app.signup(empty_email, password, requires_mfa).await;
-    assert_eq!(
-        response.status().as_u16(),
-        400,
-        "Password is too short"
-    );
+    assert_eq!(response.status().as_u16(), 400, "Password is too short");
 }
 #[tokio::test]
 async fn should_return_201_if_fields_are_sent() {
@@ -41,10 +33,7 @@ async fn should_return_201_if_fields_are_sent() {
     let requires_mfa = true;
 
     let response = app.signup(random_email, password, requires_mfa).await;
-    assert_eq!(
-        response.status().as_u16(),
-        201
-    );
+    assert_eq!(response.status().as_u16(), 201);
 
     let expected_response = SignupResponse {
         message: "User created successfully!".to_owned(),
@@ -68,7 +57,9 @@ async fn should_return_409_if_email_already_exists() {
     let password = String::from("Ilads123!");
 
     // First signup attempt
-    let response = app.signup(random_email.clone(), password.clone(), true).await;
+    let response = app
+        .signup(random_email.clone(), password.clone(), true)
+        .await;
     assert_eq!(response.status().as_u16(), 201);
 
     // Second signup attempt with the same email
@@ -77,5 +68,4 @@ async fn should_return_409_if_email_already_exists() {
     let expected_response = format!("User with email {} already exists.", random_email);
     assert_eq!(response.status().as_u16(), 409);
     assert_eq!(response.text().await.unwrap(), expected_response);
-
 }

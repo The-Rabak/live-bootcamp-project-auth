@@ -15,9 +15,9 @@ mod tests {
 
     #[tokio::test]
     async fn rejects_short_or_simple() {
-        assert!(!is_valid_password("Short!"));        // too short
+        assert!(!is_valid_password("Short!")); // too short
         assert!(!is_valid_password("alllowercase!")); // no uppercase
-        assert!(!is_valid_password("NOUPPERCASE1"));  // no special
+        assert!(!is_valid_password("NOUPPERCASE1")); // no special
     }
 
     #[tokio::test]

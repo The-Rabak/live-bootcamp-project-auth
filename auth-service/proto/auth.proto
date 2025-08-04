@@ -1,0 +1,16 @@
+syntax = "proto3";
+package auth;
+
+message SignupRequest {
+  string email        = 1;
+  string password     = 2;
+  bool   requires_mfa = 3;
+}
+
+message SignupResponse {
+  bool success = 1;
+}
+
+service Auth {
+  rpc Signup(SignupRequest) returns (SignupResponse);
+}

@@ -1,21 +1,21 @@
-use reqwest::Response;
-use serde::{Serialize, Serializer};
-use serde::ser::{SerializeStruct, SerializeStructVariant};
-use tokio::spawn;
-use tokio::net::TcpListener;
-use reqwest::Client;
 use auth_service::app_router;
+use reqwest::Client;
+use reqwest::Response;
+use serde::ser::{SerializeStruct, SerializeStructVariant};
+use serde::{Serialize, Serializer};
+use tokio::net::TcpListener;
+use tokio::spawn;
 use uuid::Uuid;
 
-use std::sync::Arc;
-use tokio::sync::RwLock;
+use auth_service::app_state::AppState;
 use auth_service::domain::SignupRequestBody;
 use auth_service::services::hashmap_user_store::HashmapUserStore;
-use auth_service::app_state::AppState;
+use std::sync::Arc;
+use tokio::sync::RwLock;
 #[derive(Serialize)]
 pub struct LoginBody {
     pub email: String,
-    pub password: String
+    pub password: String,
 }
 pub struct Verify2FABody {
     pub email: String,
@@ -26,7 +26,7 @@ pub struct Verify2FABody {
 impl Serialize for Verify2FABody {
     fn serialize<S>(&self, serializer: S) -> Result<S::Ok, S::Error>
     where
-        S: Serializer
+        S: Serializer,
     {
         let mut state = serializer.serialize_struct("Verify2FABody", 3)?;
         state.serialize_field("email", &self.email)?;
@@ -38,7 +38,7 @@ impl Serialize for Verify2FABody {
 
 #[derive(Serialize)]
 pub struct VerifyJWTBody {
-    pub token: String
+    pub token: String,
 }
 
 pub struct TestApp {
@@ -66,7 +66,10 @@ impl TestApp {
         });
 
         let client = Client::new();
-        TestApp { address, http_client: client }
+        TestApp {
+            address,
+            http_client: client,
+        }
     }
 
     pub async fn get_root(&self) -> reqwest::Response {
@@ -94,10 +97,7 @@ impl TestApp {
     }
 
     pub async fn login(&self, email: String, password: String) -> Response {
-        let body = LoginBody {
-            email,
-            password
-        };
+        let body = LoginBody { email, password };
 
         self.http_client
             .post(&format!("{}/login", &self.address))
@@ -106,13 +106,17 @@ impl TestApp {
             .send()
             .await
             .expect("Failed to execute login request.")
-
     }
-    pub async fn verify_mfa(&self, email: String, login_attempt_id: String, mfa_code: String) -> Response {
+    pub async fn verify_mfa(
+        &self,
+        email: String,
+        login_attempt_id: String,
+        mfa_code: String,
+    ) -> Response {
         let body = Verify2FABody {
             email,
             login_attempt_id,
-            mfa_code
+            mfa_code,
         };
 
         self.http_client
@@ -122,11 +126,9 @@ impl TestApp {
             .send()
             .await
             .expect("Failed to execute verify 2fa request.")
-
     }
 
     pub async fn logout(&self, jwt: String) -> Response {
-
         self.http_client
             .post(&format!("{}/logout", &self.address))
             .header("Content-Type", "application/json")
@@ -134,13 +136,10 @@ impl TestApp {
             .send()
             .await
             .expect("Failed to execute logout request.")
-
     }
 
     pub async fn verify_token(&self, jwt_token: String) -> Response {
-        let body = VerifyJWTBody {
-            token: jwt_token
-        };
+        let body = VerifyJWTBody { token: jwt_token };
 
         self.http_client
             .post(&format!("{}/verify-token", &self.address))
@@ -149,7 +148,6 @@ impl TestApp {
             .send()
             .await
             .expect("Failed to execute verify token request.")
-
     }
 }
 

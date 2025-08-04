@@ -1,5 +1,3 @@
-use std::fmt::format;
-
 use crate::validation::is_valid_password;
 
 #[derive(PartialEq, Debug)]

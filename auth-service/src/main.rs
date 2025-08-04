@@ -1,6 +1,6 @@
-use auth_service::Application;
-use auth_service::services::hashmap_user_store::HashmapUserStore;
 use auth_service::app_state::AppState;
+use auth_service::services::hashmap_user_store::HashmapUserStore;
+use auth_service::Application;
 use std::sync::Arc;
 use tokio::sync::RwLock;
 
@@ -9,7 +9,7 @@ async fn main() {
     env_logger::init();
     let user_store = HashmapUserStore::new();
     let app_state = AppState::new(Arc::new(RwLock::new(user_store)));
-    let app = Application::build(app_state, "0.0.0.0:3000")
+    let app = Application::build(app_state, "0.0.0.0:3000", "0.0.0.0:50051")
         .await
         .expect("Failed to build app");
 

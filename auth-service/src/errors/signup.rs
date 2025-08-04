@@ -1,5 +1,5 @@
+use axum::{http::StatusCode, response::IntoResponse};
 use thiserror::Error;
-use axum::{response::IntoResponse, http::StatusCode};
 
 #[derive(Error, Debug)]
 pub enum SignupError {

@@ -1,4 +1,4 @@
-use crate::helpers::{TestApp, get_random_email};
+use crate::helpers::{get_random_email, TestApp};
 
 #[tokio::test]
 async fn verify_mfa_success() {

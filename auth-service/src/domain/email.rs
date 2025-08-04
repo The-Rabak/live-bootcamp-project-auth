@@ -1,5 +1,3 @@
-use std::fmt::format;
-
 use crate::validation::is_valid_email;
 
 #[derive(PartialEq, Debug, Clone, Eq, Hash)]
@@ -9,7 +7,7 @@ impl Email {
     pub fn parse(email: String) -> Result<Email, String> {
         match is_valid_email(&email) {
             true => Ok(Email(email)),
-            false => Err(format!("Email {} is not valid", email))
+            false => Err(format!("Email {} is not valid", email)),
         }
     }
 }
