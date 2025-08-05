@@ -8,8 +8,6 @@ services:
     build:
       context: ./auth-service
     image: legols122/auth-service
-    ports:
-      - "3000:3000"
     restart: "always" # automatically restart container when server crashes
     env_file:
       - "./auth-service/.env"

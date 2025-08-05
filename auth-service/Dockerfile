@@ -43,5 +43,4 @@ WORKDIR /app
 COPY --from=chiseled_builder /rootfs /
 COPY --from=builder /app/target/release/auth-service /app
 COPY --from=builder /app/assets /app/assets
-EXPOSE 3000
 ENTRYPOINT ["/app/auth-service"]
