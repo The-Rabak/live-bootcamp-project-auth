@@ -2,7 +2,7 @@ use axum::{http::StatusCode, response::IntoResponse};
 use thiserror::Error;
 
 #[derive(Error, Debug)]
-pub enum SignupError {
+pub enum LoginError {
     #[error("malformed json: {0}")]
     Json(#[from] serde_json::Error),
 
@@ -15,18 +15,18 @@ pub enum SignupError {
     #[error("Something went wrong, please try again later.")]
     InternalServerError,
 
-    #[error("User with email {0} already exists.")]
-    UserAlreadyExists(String),
+    #[error("User with email {0} not found.")]
+    UserNotFound(String),
 }
 
-impl IntoResponse for SignupError {
+impl IntoResponse for LoginError {
     fn into_response(self) -> axum::response::Response {
         let status = match self {
-            SignupError::Json(_) => StatusCode::BAD_REQUEST,
-            SignupError::InvalidEmail => StatusCode::UNPROCESSABLE_ENTITY,
-            SignupError::InvalidPassword => StatusCode::UNPROCESSABLE_ENTITY,
-            SignupError::InternalServerError => StatusCode::INTERNAL_SERVER_ERROR,
-            SignupError::UserAlreadyExists(_) => StatusCode::CONFLICT,
+            LoginError::Json(_) => StatusCode::BAD_REQUEST,
+            LoginError::InvalidEmail => StatusCode::UNPROCESSABLE_ENTITY,
+            LoginError::InvalidPassword => StatusCode::UNPROCESSABLE_ENTITY,
+            LoginError::InternalServerError => StatusCode::INTERNAL_SERVER_ERROR,
+            LoginError::UserNotFound(_) => StatusCode::UNAUTHORIZED,
         };
 
         (status, self.to_string()).into_response()

@@ -32,6 +32,7 @@ jobs:
     - name: Build and test auth-service code
       working-directory: ./auth-service
       run: |
+        export JWT_SECRET=lads
         cargo build --verbose
         cargo test --verbose
 
@@ -84,5 +85,6 @@ jobs:
         script: |
           cd ~
           export AUTH_SERVICE_IP=${{ vars.DROPLET_IP }}
+          export JWT_SECRET=${{ secrets.JWT_SECRET }}
           docker compose -f auth-compose.yml -f app-compose.yml -f compose.yml -f compose.override.yml down
           docker compose -f auth-compose.yml -f app-compose.yml -f compose.yml -f compose.override.yml up -d --pull always

@@ -19,6 +19,7 @@ pub mod errors;
 pub mod routes;
 pub mod services;
 pub mod validation;
+pub mod utils;
 pub mod proto {
     #[cfg(not(rust_analyzer))]
     tonic::include_proto!("auth");
@@ -96,6 +97,9 @@ impl Application {
 
     pub async fn run(self) -> Result<(), Box<dyn Error>> {
         // Run both servers concurrently using tokio::join!
+
+        println!("http listening on {}", &self.address);
+        println!("grpc listening on {}", &self.grpc_address);
         let (http_result, grpc_result) = tokio::join!(
             async {
                 self.http_future
@@ -112,9 +116,6 @@ impl Application {
         // If either server fails, return the error
         http_result?;
         grpc_result?;
-
-        println!("http listening on {}", &self.address);
-        println!("grpc listening on {}", &self.grpc_address);
 
         Ok(())
     }

@@ -5,6 +5,7 @@ ARG CHISEL_VERSION=v1.1.0
 FROM rust:1.88-alpine AS chef
 USER root
 # Add cargo-chef to cache dependencies
+RUN apk update && apk add --no-cache make protobuf-dev
 RUN apk add --no-cache musl-dev & cargo install cargo-chef
 WORKDIR /app
 
@@ -42,4 +43,5 @@ WORKDIR /app
 COPY --from=chiseled_builder /rootfs /
 COPY --from=builder /app/target/release/auth-service /app
 COPY --from=builder /app/assets /app/assets
+EXPOSE 3000
 ENTRYPOINT ["/app/auth-service"]

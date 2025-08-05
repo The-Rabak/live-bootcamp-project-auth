@@ -2,7 +2,7 @@ use crate::helpers::{get_random_email, TestApp};
 use auth_service::{domain::signup_response::SignupResponse, errors::SignupError};
 
 #[tokio::test]
-async fn should_return_400_if_email_empty() {
+async fn should_return_422_if_malformed_email() {
     let app = TestApp::new().await;
 
     let empty_email = String::new();
@@ -10,11 +10,11 @@ async fn should_return_400_if_email_empty() {
     let requires_mfa = true;
 
     let response = app.signup(empty_email, password, requires_mfa).await;
-    assert_eq!(response.status().as_u16(), 400, "Invalid email");
+    assert_eq!(response.status().as_u16(), 422, "Invalid email");
 }
 
 #[tokio::test]
-async fn should_return_400_if_password_empty() {
+async fn should_return_422_if_malformed_password() {
     let app = TestApp::new().await;
 
     let empty_email = get_random_email();
@@ -22,7 +22,7 @@ async fn should_return_400_if_password_empty() {
     let requires_mfa = true;
 
     let response = app.signup(empty_email, password, requires_mfa).await;
-    assert_eq!(response.status().as_u16(), 400, "Password is too short");
+    assert_eq!(response.status().as_u16(), 422, "Password is too short");
 }
 #[tokio::test]
 async fn should_return_201_if_fields_are_sent() {

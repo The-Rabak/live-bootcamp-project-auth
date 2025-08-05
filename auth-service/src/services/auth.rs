@@ -1,6 +1,6 @@
 use crate::app_state::AppState;
 use crate::domain::{Email, Password, User, UserStoreError};
-use crate::errors::SignupError;
+use crate::errors::{LoginError, SignupError};
 
 pub struct AuthService {}
 impl AuthService {
@@ -21,6 +21,21 @@ impl AuthService {
                 SignupError::UserAlreadyExists(email.as_ref().to_string())
             }
             _ => SignupError::InternalServerError,
+        })?;
+        Ok(())
+    }
+
+    pub async fn login(
+        state: AppState,
+        email: Email,
+        password: Password
+    ) -> Result<(), LoginError> {
+        let result = state.user_store.write().await.validate_user(email.clone(), password).await;
+        result.map_err(|e| match e {
+            UserStoreError::UserNotFound => {
+                LoginError::UserNotFound(email.as_ref().to_string())
+            }
+            _ => LoginError::InternalServerError,
         })?;
         Ok(())
     }
