@@ -30,7 +30,7 @@ jobs:
         run: rustup update stable && rustup default stable
 
       - name: Install Protobuf
-        run: apt-get update && apt-get install -y protobuf-compiler
+        run: sudo apt-get update && sudo apt-get install -y protobuf-compiler
 
       - name: Build and test auth-service code
         working-directory: ./auth-service
