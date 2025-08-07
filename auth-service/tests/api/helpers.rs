@@ -1,6 +1,9 @@
 use auth_service::app_router;
+use reqwest::cookie::CookieStore;
+use reqwest::cookie::Jar;
 use reqwest::Client;
 use reqwest::Response;
+use reqwest::Url;
 use serde::ser::{SerializeStruct, SerializeStructVariant};
 use serde::{Serialize, Serializer};
 use tokio::net::TcpListener;
@@ -44,6 +47,7 @@ pub struct VerifyJWTBody {
 pub struct TestApp {
     pub address: String,
     pub http_client: Client,
+    pub cookie_jar: Arc<Jar>,
 }
 
 impl TestApp {
@@ -66,9 +70,11 @@ impl TestApp {
         });
 
         let client = Client::new();
+        let cookie_jar = Arc::new(Jar::default());
         TestApp {
             address,
             http_client: client,
+            cookie_jar,
         }
     }
 
@@ -128,14 +134,21 @@ impl TestApp {
             .expect("Failed to execute verify 2fa request.")
     }
 
-    pub async fn logout(&self, jwt: String) -> Response {
-        self.http_client
+    pub async fn logout(&self) -> Response {
+        let url = Url::parse(&self.address).unwrap();
+        let response = self
+            .http_client
             .post(&format!("{}/logout", &self.address))
             .header("Content-Type", "application/json")
-            .header("Cookie", format!("jwt={}", jwt))
+            .header("Cookie", self.cookie_jar.cookies(&url).unwrap())
             .send()
             .await
-            .expect("Failed to execute logout request.")
+            .expect("Failed to execute logout request.");
+
+        let mut cookies = response.headers().get_all("set-cookie").iter();
+        self.cookie_jar.set_cookies(&mut cookies, &url);
+
+        response
     }
 
     pub async fn verify_token(&self, jwt_token: String) -> Response {
