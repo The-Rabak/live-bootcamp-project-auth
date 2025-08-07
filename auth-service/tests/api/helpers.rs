@@ -70,8 +70,12 @@ impl TestApp {
             }
         });
 
-        let client = Client::new();
         let cookie_jar = Arc::new(Jar::default());
+        let client = Client::builder()
+            .cookie_provider(Arc::clone(&cookie_jar))
+            .build()
+            .expect("failed to build http client");
+
         TestApp {
             address,
             http_client: client,
@@ -140,13 +144,6 @@ impl TestApp {
         let response = self
             .http_client
             .post(&format!("{}/logout", &self.address))
-            .header("Content-Type", "application/json")
-            .header(
-                "Cookie",
-                self.cookie_jar
-                    .cookies(&url)
-                    .unwrap_or(HeaderValue::from_static("lads=lads")),
-            )
             .send()
             .await
             .expect("Failed to execute logout request.");
