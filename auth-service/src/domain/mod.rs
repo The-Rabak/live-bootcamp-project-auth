@@ -7,6 +7,7 @@ pub mod password;
 pub mod signup_request;
 pub mod signup_response;
 mod user;
+pub mod verify_token_request;
 
 pub use data_stores::*;
 pub use email::*;
@@ -17,3 +18,4 @@ pub use password::*;
 pub use signup_request::*;
 pub use signup_response::*;
 pub use user::*;
+pub use verify_token_request::*;

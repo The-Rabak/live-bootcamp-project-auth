@@ -31,8 +31,8 @@ pub enum GenerateTokenError {
 }
 
 // Create JWT auth token
-fn generate_auth_token(email: &Email) -> Result<String, GenerateTokenError> {
-    let delta = chrono::Duration::try_seconds(TOKEN_TTL_SECONDS)
+pub fn generate_auth_token(email: &Email) -> Result<String, GenerateTokenError> {
+    let delta = chrono::Duration::try_seconds(*TOKEN_TTL_SECONDS)
         .ok_or(GenerateTokenError::UnexpectedError)?;
 
     // Create JWT expiration time
