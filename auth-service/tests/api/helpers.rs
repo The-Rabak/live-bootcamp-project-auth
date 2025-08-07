@@ -1,6 +1,7 @@
 use auth_service::app_router;
 use reqwest::cookie::CookieStore;
 use reqwest::cookie::Jar;
+use reqwest::header::HeaderValue;
 use reqwest::Client;
 use reqwest::Response;
 use reqwest::Url;
@@ -140,7 +141,12 @@ impl TestApp {
             .http_client
             .post(&format!("{}/logout", &self.address))
             .header("Content-Type", "application/json")
-            .header("Cookie", self.cookie_jar.cookies(&url).unwrap())
+            .header(
+                "Cookie",
+                self.cookie_jar
+                    .cookies(&url)
+                    .unwrap_or(HeaderValue::from_static("lads=lads")),
+            )
             .send()
             .await
             .expect("Failed to execute logout request.");

@@ -8,7 +8,10 @@ use crate::helpers::{get_random_email, TestApp};
 
 #[tokio::test]
 async fn should_return_400_if_jwt_cookie_missing() {
-    todo!()
+    let app = TestApp::new().await;
+
+    let response = app.logout().await;
+    assert_eq!(response.status(), 400);
 }
 
 #[tokio::test]
