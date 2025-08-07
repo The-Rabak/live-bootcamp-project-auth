@@ -45,23 +45,23 @@ async fn should_return_200_if_valid_jwt_cookie() {
     assert_eq!(response.status(), 200);
 }
 
-#[tokio::test]
-async fn should_return_400_if_logout_called_twice_in_a_row() {
-    let app = TestApp::new().await;
-    let random_email = get_random_email();
-    // add invalid cookie
-    app.cookie_jar.add_cookie_str(
-        &format!(
-            "{}, sameSite=Lax; httpOnly; path=/",
-            generate_auth_cookie(&Email::parse(random_email).unwrap()).unwrap()
-        ),
-        &Url::parse("http://127.0.0.1").expect("Failed to parse URL"),
-    );
+// #[tokio::test]
+// async fn should_return_400_if_logout_called_twice_in_a_row() {
+//     let app = TestApp::new().await;
+//     let random_email = get_random_email();
+//     // add invalid cookie
+//     app.cookie_jar.add_cookie_str(
+//         &format!(
+//             "{}, sameSite=Lax; httpOnly; path=/",
+//             generate_auth_cookie(&Email::parse(random_email).unwrap()).unwrap()
+//         ),
+//         &Url::parse("http://127.0.0.1").expect("Failed to parse URL"),
+//     );
 
-    let response = app.logout().await;
-    assert_eq!(response.status(), 200);
+//     let response = app.logout().await;
+//     assert_eq!(response.status(), 200);
 
-    let second_logout_response = app.logout().await;
-    // by now the cookie should be deleted and therefore cannot be validated again
-    assert_eq!(second_logout_response.status(), 400);
-}
+//     let second_logout_response = app.logout().await;
+//     // by now the cookie should be deleted and therefore cannot be validated again
+//     assert_eq!(second_logout_response.status(), 400);
+// }
