@@ -32,7 +32,6 @@ lazy_static = "1.4.0"
 [dev-dependencies]
 simple_logger = "5.0.0"
 reqwest = { version = "0.11.26", default-features = false, features = ["json", "cookies"] }
-serial_test = "3.0"
 
 [build-dependencies]
 # generates the Rust code from your .proto files at build time

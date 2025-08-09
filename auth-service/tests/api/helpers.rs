@@ -1,4 +1,5 @@
 use auth_service::app_router;
+use auth_service::domain::BannedTokenStore;
 use reqwest::cookie::CookieStore;
 use reqwest::cookie::Jar;
 use reqwest::header::HeaderValue;
@@ -13,7 +14,10 @@ use uuid::Uuid;
 
 use auth_service::app_state::AppState;
 use auth_service::domain::SignupRequestBody;
-use auth_service::services::hashmap_user_store::HashmapUserStore;
+use auth_service::services::{
+    hashmap_user_store::HashmapUserStore, hashset_banned_token_store::HashsetBannedTokenStore,
+};
+use auth_service::utils::Config;
 use std::sync::Arc;
 use tokio::sync::RwLock;
 #[derive(Serialize)]
@@ -49,12 +53,21 @@ pub struct TestApp {
     pub address: String,
     pub http_client: Client,
     pub cookie_jar: Arc<Jar>,
+    pub banned_token_store: Arc<RwLock<dyn BannedTokenStore>>,
+    pub config: Arc<RwLock<Config>>,
 }
 
 impl TestApp {
     pub async fn new() -> Self {
         let user_store = HashmapUserStore::new();
-        let app_state = AppState::new(Arc::new(RwLock::new(user_store)));
+        let banned_token_store: Arc<RwLock<dyn BannedTokenStore>> =
+            Arc::new(RwLock::new(HashsetBannedTokenStore::new()));
+        let config = Arc::new(RwLock::new(Config::default()));
+        let app_state = AppState::new(
+            Arc::new(RwLock::new(user_store)),
+            Arc::clone(&banned_token_store),
+            Arc::clone(&config),
+        );
         let listener = TcpListener::bind("127.0.0.1:0")
             .await
             .expect("failed binding to an ephemeral port");
@@ -80,6 +93,8 @@ impl TestApp {
             address,
             http_client: client,
             cookie_jar,
+            banned_token_store,
+            config,
         }
     }
 

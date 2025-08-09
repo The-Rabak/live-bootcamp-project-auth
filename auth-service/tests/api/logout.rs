@@ -1,6 +1,4 @@
-use auth_service::{
-    domain::Email, errors::LogoutError, utils::consts::JWT_COOKIE_NAME, utils::generate_auth_cookie,
-};
+use auth_service::{domain::Email, errors::LogoutError, utils::generate_auth_cookie};
 
 use reqwest::{cookie::CookieStore, Url};
 
@@ -20,10 +18,7 @@ async fn should_return_401_if_invalid_token() {
 
     // add invalid cookie
     app.cookie_jar.add_cookie_str(
-        &format!(
-            "{}=invalid; HttpOnly; SameSite=Lax; Secure; Path=/",
-            JWT_COOKIE_NAME
-        ),
+        &format!("{}=invalid; HttpOnly; SameSite=Lax; Secure; Path=/", "jwt"),
         &Url::parse("http://127.0.0.1").expect("Failed to parse URL"),
     );
 
@@ -35,17 +30,24 @@ async fn should_return_401_if_invalid_token() {
 async fn should_return_200_if_valid_jwt_cookie() {
     let app = TestApp::new().await;
     let random_email = get_random_email();
-    // add invalid cookie
+    let config = app.config.read().await;
+    let jwt_cookie = generate_auth_cookie(&Email::parse(random_email).unwrap(), &config).unwrap();
+    let token_value = jwt_cookie.value().to_owned();
     app.cookie_jar.add_cookie_str(
-        &format!(
-            "{}, sameSite=Lax; httpOnly; path=/",
-            generate_auth_cookie(&Email::parse(random_email).unwrap()).unwrap()
-        ),
+        &format!("{}, sameSite=Lax; httpOnly; path=/", jwt_cookie),
         &Url::parse("http://127.0.0.1").expect("Failed to parse URL"),
     );
 
     let response = app.logout().await;
     assert_eq!(response.status(), 200);
+    let token_exists = app
+        .banned_token_store
+        .read_owned()
+        .await
+        .token_exists(&token_value)
+        .await;
+
+    assert_eq!(true, token_exists);
 }
 
 // #[tokio::test]
@@ -56,7 +58,7 @@ async fn should_return_200_if_valid_jwt_cookie() {
 //     app.cookie_jar.add_cookie_str(
 //         &format!(
 //             "{}, sameSite=Lax; httpOnly; path=/",
-//             generate_auth_cookie(&Email::parse(random_email).unwrap()).unwrap()
+//             generate_auth_cookie(&Email::parse(random_email).unwrap(), &config).unwrap()
 //         ),
 //         &Url::parse("http://127.0.0.1").expect("Failed to parse URL"),
 //     );

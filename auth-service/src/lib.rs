@@ -11,15 +11,16 @@ use std::{error::Error, future::Future, pin::Pin};
 use tonic::transport::server::Router as GrpcRouter;
 use tonic::transport::Error as GrpcError;
 use tonic::transport::Server;
-use tower_http::services::ServeDir;
+use tower::ServiceBuilder;
+use tower_http::{services::ServeDir, trace::TraceLayer};
 
 pub mod app_state;
 pub mod domain;
 pub mod errors;
 pub mod routes;
 pub mod services;
-pub mod validation;
 pub mod utils;
+pub mod validation;
 pub mod proto {
     #[cfg(not(rust_analyzer))]
     tonic::include_proto!("auth");
@@ -27,14 +28,11 @@ pub mod proto {
     #[cfg(rust_analyzer)]
     include!("generated/auth.rs");
 
-    pub const AUTH_DESCRIPTOR: &[u8] =
-    tonic::include_file_descriptor_set!("auth_descriptor");
+    pub const AUTH_DESCRIPTOR: &[u8] = tonic::include_file_descriptor_set!("auth_descriptor");
 }
 
-use tonic_reflection::server::Builder as ReflectionBuilder;
 use proto::AUTH_DESCRIPTOR;
-
-
+use tonic_reflection::server::Builder as ReflectionBuilder;
 
 type ServerFuture = Pin<Box<dyn Future<Output = Result<(), std::io::Error>> + Send>>;
 type GrpcServerFuture = Pin<Box<dyn Future<Output = Result<(), GrpcError>> + Send>>;
@@ -49,19 +47,20 @@ pub fn app_router(app_state: AppState) -> Router {
         .route("/verify-token", post(verify_token::verify_token))
         .route("/delete-account", delete(delete_account::delete_account))
         .with_state(app_state)
+        .layer(ServiceBuilder::new().layer(TraceLayer::new_for_http()))
 }
 
 pub fn create_grpc_server(app_state: AppState) -> GrpcRouter {
     let auth_service = AuthGrpc { state: app_state };
 
     let reflection_svc = ReflectionBuilder::configure()
-    .register_encoded_file_descriptor_set(AUTH_DESCRIPTOR)
-    .build_v1()
-    .unwrap();
+        .register_encoded_file_descriptor_set(AUTH_DESCRIPTOR)
+        .build_v1()
+        .unwrap();
 
     Server::builder()
-    .add_service(reflection_svc)
-    .add_service(AuthServer::new(auth_service))
+        .add_service(reflection_svc)
+        .add_service(AuthServer::new(auth_service))
 }
 
 // This struct encapsulates our application-related logic.
@@ -81,7 +80,6 @@ impl Application {
         grpc_address: &str,
     ) -> Result<Self, Box<dyn Error>> {
         let http_router = app_router(app_state.clone());
-
 
         let grpc_future = create_grpc_server(app_state.clone()).serve(grpc_address.parse()?);
 
