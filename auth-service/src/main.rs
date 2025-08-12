@@ -1,7 +1,6 @@
 use auth_service::app_state::AppState;
-use auth_service::services::{
-    hashmap_user_store::HashmapUserStore, hashset_banned_token_store::HashsetBannedTokenStore,
-};
+use auth_service::services::hashmap_user_store::HashmapUserStore;
+use auth_service::services::{HashsetRefreshStore, TokenService};
 use auth_service::utils::Config;
 use auth_service::Application;
 use std::sync::Arc;
@@ -11,12 +10,16 @@ use tokio::sync::RwLock;
 async fn main() {
     env_logger::init();
     let user_store = HashmapUserStore::new();
-    let banned_token_store = HashsetBannedTokenStore::new();
-    let config = Config::default();
+    let config = Arc::new(RwLock::new(
+        Config::default().expect("Failed to load config"),
+    ));
+    let token_service = Arc::new(RwLock::new(
+        TokenService::new(config.clone(), Box::new(HashsetRefreshStore::default())).await,
+    ));
     let app_state = AppState::new(
         Arc::new(RwLock::new(user_store)),
-        Arc::new(RwLock::new(banned_token_store)),
-        Arc::new(RwLock::new(config)),
+        token_service,
+        config.clone(),
     );
     let app = Application::build(app_state, "0.0.0.0:3000", "0.0.0.0:50051")
         .await

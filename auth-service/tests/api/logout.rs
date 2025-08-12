@@ -1,53 +1,67 @@
-use auth_service::{domain::Email, errors::LogoutError, utils::generate_auth_cookie};
-
-use reqwest::{cookie::CookieStore, Url};
-
 use crate::helpers::{get_random_email, TestApp};
 
 #[tokio::test]
-async fn should_return_400_if_jwt_cookie_missing() {
+async fn should_return_401_if_authorization_header_missing() {
     let app = TestApp::new().await;
 
-    let response = app.logout().await;
-    assert_eq!(response.status(), 400);
+    let response = app
+        .http_client
+        .post(&format!("{}/logout", &app.address))
+        .send()
+        .await
+        .expect("Failed to execute logout request.");
+
+    assert_eq!(response.status(), 401);
 }
 
 #[tokio::test]
 async fn should_return_401_if_invalid_token() {
     let app = TestApp::new().await;
 
-    // add invalid cookie
-    app.cookie_jar.add_cookie_str(
-        &format!("{}=invalid; HttpOnly; SameSite=Lax; Secure; Path=/", "jwt"),
-        &Url::parse("http://127.0.0.1").expect("Failed to parse URL"),
-    );
+    let response = app
+        .http_client
+        .post(&format!("{}/logout", &app.address))
+        .header("Authorization", "Bearer invalid_token")
+        .send()
+        .await
+        .expect("Failed to execute logout request.");
 
-    let response = app.logout().await;
     assert_eq!(response.status(), 401);
 }
 
 #[tokio::test]
-async fn should_return_200_if_valid_jwt_cookie() {
+async fn should_return_200_if_valid_token() {
     let app = TestApp::new().await;
-    let random_email = get_random_email();
-    let config = app.config.read().await;
-    let jwt_cookie = generate_auth_cookie(&Email::parse(random_email).unwrap(), &config).unwrap();
-    let token_value = jwt_cookie.value().to_owned();
-    app.cookie_jar.add_cookie_str(
-        &format!("{}, sameSite=Lax; httpOnly; path=/", jwt_cookie),
-        &Url::parse("http://127.0.0.1").expect("Failed to parse URL"),
-    );
+    let email = get_random_email();
 
-    let response = app.logout().await;
-    assert_eq!(response.status(), 200);
-    let token_exists = app
-        .banned_token_store
-        .read_owned()
+    let issued = app
+        .token_service
+        .write()
         .await
-        .token_exists(&token_value)
-        .await;
+        .issue_initial_session(&email)
+        .await
+        .expect("Failed to issue session");
 
-    assert_eq!(true, token_exists);
+    let response = app
+        .http_client
+        .post(&format!("{}/logout", &app.address))
+        .header("Authorization", format!("Bearer {}", issued.access_token))
+        .send()
+        .await
+        .expect("Failed to execute logout request.");
+
+    assert_eq!(response.status(), 200);
+
+    // Verify that the session has been logged out by trying to use the token again
+    let second_response = app
+        .http_client
+        .post(&format!("{}/logout", &app.address))
+        .header("Authorization", format!("Bearer {}", issued.access_token))
+        .send()
+        .await
+        .expect("Failed to execute second logout request.");
+
+    assert_eq!(second_response.status(), 401);
 }
 
 // #[tokio::test]

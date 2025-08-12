@@ -1,5 +1,7 @@
+pub mod access_claims;
 pub mod data_stores;
 pub mod email;
+pub mod issued_tokens;
 pub mod login_request;
 pub mod login_response;
 pub mod logout_response;
@@ -9,8 +11,10 @@ pub mod signup_response;
 mod user;
 pub mod verify_token_request;
 
+pub use access_claims::*;
 pub use data_stores::*;
 pub use email::*;
+pub use issued_tokens::*;
 pub use login_request::*;
 pub use login_response::*;
 pub use logout_response::*;

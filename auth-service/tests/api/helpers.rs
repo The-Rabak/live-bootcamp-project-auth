@@ -1,12 +1,14 @@
 use auth_service::app_router;
-use auth_service::domain::BannedTokenStore;
+
+use auth_service::services::HashsetRefreshStore;
+use auth_service::services::TokenService;
 use reqwest::cookie::CookieStore;
 use reqwest::cookie::Jar;
-use reqwest::header::HeaderValue;
+
 use reqwest::Client;
 use reqwest::Response;
 use reqwest::Url;
-use serde::ser::{SerializeStruct, SerializeStructVariant};
+use serde::ser::SerializeStruct;
 use serde::{Serialize, Serializer};
 use tokio::net::TcpListener;
 use tokio::spawn;
@@ -14,9 +16,7 @@ use uuid::Uuid;
 
 use auth_service::app_state::AppState;
 use auth_service::domain::SignupRequestBody;
-use auth_service::services::{
-    hashmap_user_store::HashmapUserStore, hashset_banned_token_store::HashsetBannedTokenStore,
-};
+use auth_service::services::hashmap_user_store::HashmapUserStore;
 use auth_service::utils::Config;
 use std::sync::Arc;
 use tokio::sync::RwLock;
@@ -53,19 +53,39 @@ pub struct TestApp {
     pub address: String,
     pub http_client: Client,
     pub cookie_jar: Arc<Jar>,
-    pub banned_token_store: Arc<RwLock<dyn BannedTokenStore>>,
+    pub token_service: Arc<RwLock<TokenService>>,
     pub config: Arc<RwLock<Config>>,
 }
 
 impl TestApp {
     pub async fn new() -> Self {
         let user_store = HashmapUserStore::new();
-        let banned_token_store: Arc<RwLock<dyn BannedTokenStore>> =
-            Arc::new(RwLock::new(HashsetBannedTokenStore::new()));
-        let config = Arc::new(RwLock::new(Config::default()));
+        // Set up test environment variables
+        std::env::set_var("JWT_ISSUER", "test_issuer");
+        std::env::set_var("JWT_AUDIENCE", "test_audience");
+        std::env::set_var("ACCESS_TTL_SECONDS", "3600");
+        std::env::set_var("REFRESH_TTL_SECONDS", "86400");
+        std::env::set_var(
+            "REFRESH_HASH_KEY_B64",
+            "dGVzdF9yZWZyZXNoX2hhc2hfa2V5XzMyX2J5dGVzISE",
+        );
+        std::env::set_var("JWT_ACTIVE_KID", "test_key_id");
+        std::env::set_var(
+            "JWT_HS256_KEYS_JSON",
+            r#"[{"kid":"test_key_id","secret_b64":"dGVzdF9zZWNyZXRfa2V5X3RoYXRfaXNfbG9uZ19lbm91Z2hfZm9yX2hzMjU2X2FsZ29yaXRobQ"}]"#,
+        );
+        std::env::set_var("ACCESS_COOKIE_NAME", "access_token");
+        std::env::set_var("REFRESH_COOKIE_NAME", "refresh_token");
+
+        let config = Arc::new(RwLock::new(
+            Config::default().expect("could not start config for tests"),
+        ));
+        let token_service = Arc::new(RwLock::new(
+            TokenService::new(config.clone(), Box::new(HashsetRefreshStore::default())).await,
+        ));
         let app_state = AppState::new(
             Arc::new(RwLock::new(user_store)),
-            Arc::clone(&banned_token_store),
+            token_service.clone(),
             Arc::clone(&config),
         );
         let listener = TcpListener::bind("127.0.0.1:0")
@@ -93,7 +113,7 @@ impl TestApp {
             address,
             http_client: client,
             cookie_jar,
-            banned_token_store,
+            token_service,
             config,
         }
     }

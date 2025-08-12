@@ -52,7 +52,7 @@ async fn should_return_200_if_valid_credentials_and_2fa_disabled() {
 
     let auth_cookie = response
         .cookies()
-        .find(|cookie| cookie.name() == "jwt")
+        .find(|cookie| cookie.name() == "access_token")
         .expect("No auth cookie found");
 
     assert!(!auth_cookie.value().is_empty());
