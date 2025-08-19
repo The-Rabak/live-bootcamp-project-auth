@@ -10,5 +10,5 @@ pub trait UserStore: Send + Sync {
         &self,
         username: Email,
         password: Password,
-    ) -> Result<bool, UserStoreError>;
+    ) -> Result<User, UserStoreError>;
 }

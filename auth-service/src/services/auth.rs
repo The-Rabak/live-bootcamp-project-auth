@@ -28,15 +28,20 @@ impl AuthService {
     pub async fn login(
         state: AppState,
         email: Email,
-        password: Password
-    ) -> Result<(), LoginError> {
-        let result = state.user_store.write().await.validate_user(email.clone(), password).await;
-        result.map_err(|e| match e {
-            UserStoreError::UserNotFound => {
-                LoginError::UserNotFound(email.as_ref().to_string())
+        password: Password,
+    ) -> Result<User, LoginError> {
+        match state
+            .user_store
+            .write()
+            .await
+            .validate_user(email.clone(), password)
+            .await
+        {
+            Err(UserStoreError::UserNotFound) => {
+                Err(LoginError::UserNotFound(email.as_ref().to_string()))
             }
-            _ => LoginError::InternalServerError,
-        })?;
-        Ok(())
+            Err(_) => Err(LoginError::InternalServerError),
+            Ok(user) => Ok(user),
+        }
     }
 }

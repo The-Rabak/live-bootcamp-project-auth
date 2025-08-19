@@ -1,4 +1,5 @@
 use crate::helpers::{get_random_email, TestApp};
+use auth_service::routes::TwoFactorAuthResponse;
 
 #[tokio::test]
 async fn should_return_422_if_malformed_email() {
@@ -56,4 +57,30 @@ async fn should_return_200_if_valid_credentials_and_2fa_disabled() {
         .expect("No auth cookie found");
 
     assert!(!auth_cookie.value().is_empty());
+}
+
+#[tokio::test]
+async fn should_return_206_if_valid_credentials_and_2fa_enabled() {
+    let app = TestApp::new().await;
+
+    let random_email = get_random_email();
+    let password = "Password123!".to_string();
+    let requires_mfa = true;
+
+    let response = app
+        .signup(random_email.clone(), password.clone(), requires_mfa)
+        .await;
+
+    assert_eq!(response.status().as_u16(), 201);
+
+    let response = app.login(random_email.clone(), password.clone()).await;
+
+    assert_eq!(
+        response
+            .json::<TwoFactorAuthResponse>()
+            .await
+            .expect("Could not deserialize response body to TwoFactorAuthResponse")
+            .message,
+        "2FA required".to_owned()
+    );
 }

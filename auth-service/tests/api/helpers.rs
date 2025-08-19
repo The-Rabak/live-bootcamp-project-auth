@@ -1,7 +1,7 @@
 use auth_service::app_router;
 
-use auth_service::services::HashsetRefreshStore;
 use auth_service::services::TokenService;
+use auth_service::services::{HashmapTwoFACodeStore, HashsetRefreshStore};
 use reqwest::cookie::CookieStore;
 use reqwest::cookie::Jar;
 
@@ -14,12 +14,13 @@ use tokio::net::TcpListener;
 use tokio::spawn;
 use uuid::Uuid;
 
-use auth_service::app_state::AppState;
+use auth_service::app_state::{AppState, TwoFACodeStoreType};
 use auth_service::domain::SignupRequestBody;
 use auth_service::services::hashmap_user_store::HashmapUserStore;
 use auth_service::utils::Config;
 use std::sync::Arc;
 use tokio::sync::RwLock;
+
 #[derive(Serialize)]
 pub struct LoginBody {
     pub email: String,
@@ -55,6 +56,7 @@ pub struct TestApp {
     pub cookie_jar: Arc<Jar>,
     pub token_service: Arc<RwLock<TokenService>>,
     pub config: Arc<RwLock<Config>>,
+    pub twofa_code_store: TwoFACodeStoreType,
 }
 
 impl TestApp {
@@ -83,10 +85,13 @@ impl TestApp {
         let token_service = Arc::new(RwLock::new(
             TokenService::new(config.clone(), Box::new(HashsetRefreshStore::default())).await,
         ));
+        let twofa_code_store = Arc::new(RwLock::new(HashmapTwoFACodeStore::default()));
+
         let app_state = AppState::new(
             Arc::new(RwLock::new(user_store)),
             token_service.clone(),
             Arc::clone(&config),
+            twofa_code_store.clone(),
         );
         let listener = TcpListener::bind("127.0.0.1:0")
             .await
@@ -115,6 +120,7 @@ impl TestApp {
             cookie_jar,
             token_service,
             config,
+            twofa_code_store,
         }
     }
 

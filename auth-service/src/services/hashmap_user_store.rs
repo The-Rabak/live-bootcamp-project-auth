@@ -46,10 +46,10 @@ impl UserStore for HashmapUserStore {
         &self,
         email: Email,
         password: Password,
-    ) -> Result<bool, UserStoreError> {
+    ) -> Result<User, UserStoreError> {
         if let Some(user) = self.get_user(email.clone()).await.ok() {
             if user.email == email && user.password == password {
-                return Ok(true);
+                return Ok(user.clone());
             }
             return Err(UserStoreError::InvalidCredentials);
         }
@@ -123,9 +123,9 @@ mod tests {
             Password::parse("Lads123!".to_string()).unwrap(),
             false,
         );
-        let _ = hashmap_user_store.add_user(user).await;
+        let _ = hashmap_user_store.add_user(user.clone()).await;
         assert_eq!(
-            Ok(true),
+            Ok(user),
             hashmap_user_store
                 .validate_user(
                     Email::parse("lads@tst.com".to_string()).unwrap(),

@@ -4,6 +4,8 @@ pub mod jwt_key_store;
 pub mod refresh_err;
 pub mod refresh_record;
 pub mod refresh_store;
+pub mod twofa_code_store;
+pub mod twofa_err;
 pub mod user_store;
 pub mod user_store_err;
 
@@ -13,5 +15,7 @@ pub use jwt_key_store::*;
 pub use refresh_err::RefreshError;
 pub use refresh_record::RefreshRecord;
 pub use refresh_store::*;
+pub use twofa_code_store::TwoFACodeStore;
+pub use twofa_err::TwoFAError;
 pub use user_store::UserStore;
 pub use user_store_err::UserStoreError;

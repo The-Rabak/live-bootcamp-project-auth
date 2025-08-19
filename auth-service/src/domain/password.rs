@@ -1,6 +1,6 @@
 use crate::validation::is_valid_password;
 
-#[derive(PartialEq, Debug)]
+#[derive(PartialEq, Debug, Clone)]
 pub struct Password(String);
 
 impl Password {
