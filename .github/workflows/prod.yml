@@ -89,5 +89,6 @@ jobs:
             cd ~
             export AUTH_SERVICE_IP=${{ vars.DROPLET_IP }}
             export JWT_SECRET=${{ secrets.JWT_SECRET }}
+            export POSTGRES_PASSWORD=${{ secrets.POSTGRES_PASSWORD }}
             docker compose -f auth-compose.yml -f app-compose.yml -f compose.yml -f compose.override.yml down
             docker compose -f auth-compose.yml -f app-compose.yml -f compose.yml -f compose.override.yml up -d --pull always

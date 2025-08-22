@@ -1,5 +1,6 @@
 use std::sync::Arc;
 use tokio::sync::RwLock;
+use welds::connections::any::AnyClient;
 
 use crate::domain::{EmailClient, TwoFACodeStore, UserStore};
 use crate::services::TokenService;
@@ -19,6 +20,7 @@ pub struct AppState {
     pub config: ConfigType,
     pub twofa_token_store: TwoFACodeStoreType,
     pub email_client: EmailClientType,
+    pub db_client: AnyClient,
 }
 
 impl AppState {
@@ -28,6 +30,7 @@ impl AppState {
         config: ConfigType,
         twofa_token_store: TwoFACodeStoreType,
         email_client: EmailClientType,
+        db_client: AnyClient,
     ) -> Self {
         Self {
             user_store,
@@ -35,6 +38,7 @@ impl AppState {
             config,
             twofa_token_store,
             email_client,
+            db_client,
         }
     }
 }

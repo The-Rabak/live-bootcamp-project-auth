@@ -13,10 +13,12 @@ use tonic::transport::Error as GrpcError;
 use tonic::transport::Server;
 use tower::ServiceBuilder;
 use tower_http::{services::ServeDir, trace::TraceLayer};
+use welds::connections::{any::AnyClient, connect as get_db_connection};
 
 pub mod app_state;
 pub mod domain;
 pub mod errors;
+pub mod migrations;
 pub mod routes;
 pub mod services;
 pub mod utils;
@@ -36,6 +38,16 @@ use tonic_reflection::server::Builder as ReflectionBuilder;
 
 type ServerFuture = Pin<Box<dyn Future<Output = Result<(), std::io::Error>> + Send>>;
 type GrpcServerFuture = Pin<Box<dyn Future<Output = Result<(), GrpcError>> + Send>>;
+
+pub async fn get_db_pool(url: &str) -> Result<AnyClient, welds::errors::ConnError> {
+    // Create a new db connection pool
+    match get_db_connection(url).await {
+        Ok(client) => Ok(client),
+        Err(e) => {
+            panic!("err while connecting to db {:?}", e)
+        }
+    }
+}
 
 pub fn app_router(app_state: AppState) -> Router {
     Router::new()

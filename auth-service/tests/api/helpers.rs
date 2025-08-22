@@ -1,4 +1,4 @@
-use auth_service::app_router;
+use auth_service::{app_router, get_db_pool};
 
 use auth_service::services::TokenService;
 use auth_service::services::{HashmapTwoFACodeStore, HashsetRefreshStore, MockEmailClient};
@@ -88,13 +88,14 @@ impl TestApp {
         ));
         let twofa_code_store = Arc::new(RwLock::new(HashmapTwoFACodeStore::default()));
         let email_client = Arc::new(RwLock::new(MockEmailClient::default()));
-
+        let db_client = get_db_pool(config.read().await.db_url()).await.unwrap();
         let app_state = AppState::new(
             Arc::new(RwLock::new(user_store)),
             token_service.clone(),
             Arc::clone(&config),
             twofa_code_store.clone(),
             email_client.clone(),
+            db_client,
         );
         let listener = TcpListener::bind("127.0.0.1:0")
             .await

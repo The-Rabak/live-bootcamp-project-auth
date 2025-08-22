@@ -2,6 +2,10 @@ networks:
   live-bootcamp-project:
     name: live-bootcamp-project
 
+volumes:
+  db:
+    driver: local
+
 services:
   auth-service:
     container_name: "auth-service"
@@ -12,5 +16,20 @@ services:
     env_file:
       - path: "./auth-service/.env"
         required: false
+    depends_on:
+      - db
+    networks:
+      - live-bootcamp-project
+
+  db:
+    image: postgres:15.2-alpine
+    container_name: "db"
+    restart: always
+    environment:
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+    ports:
+      - "5432:5432"
+    volumes:
+      - db:/var/lib/postgresql/data
     networks:
       - live-bootcamp-project
