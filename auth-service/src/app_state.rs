@@ -1,7 +1,7 @@
 use std::sync::Arc;
 use tokio::sync::RwLock;
 
-use crate::domain::{TwoFACodeStore, UserStore};
+use crate::domain::{EmailClient, TwoFACodeStore, UserStore};
 use crate::services::TokenService;
 use crate::utils::Config;
 
@@ -10,6 +10,7 @@ pub type TwoFACodeStoreType = Arc<RwLock<dyn TwoFACodeStore>>;
 pub type UserStoreType = Arc<RwLock<dyn UserStore>>;
 pub type TokenServiceType = Arc<RwLock<TokenService>>;
 pub type ConfigType = Arc<RwLock<Config>>;
+pub type EmailClientType = Arc<RwLock<dyn EmailClient>>;
 
 #[derive(Clone)]
 pub struct AppState {
@@ -17,6 +18,7 @@ pub struct AppState {
     pub token_service: TokenServiceType,
     pub config: ConfigType,
     pub twofa_token_store: TwoFACodeStoreType,
+    pub email_client: EmailClientType,
 }
 
 impl AppState {
@@ -25,12 +27,14 @@ impl AppState {
         token_service: TokenServiceType,
         config: ConfigType,
         twofa_token_store: TwoFACodeStoreType,
+        email_client: EmailClientType,
     ) -> Self {
         Self {
             user_store,
             token_service,
             config,
             twofa_token_store,
+            email_client,
         }
     }
 }

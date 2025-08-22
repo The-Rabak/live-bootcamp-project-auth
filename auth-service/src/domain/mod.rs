@@ -1,6 +1,7 @@
 pub mod access_claims;
 pub mod data_stores;
 pub mod email;
+pub mod email_client;
 pub mod issued_tokens;
 pub mod login_attempt_id;
 pub mod login_request;
@@ -11,11 +12,13 @@ pub mod signup_request;
 pub mod signup_response;
 pub mod twofa_code;
 mod user;
+pub mod verify_mfa_request;
 pub mod verify_token_request;
 
 pub use access_claims::*;
 pub use data_stores::*;
 pub use email::*;
+pub use email_client::*;
 pub use issued_tokens::*;
 pub use login_attempt_id::LoginAttemptId;
 pub use login_request::*;
@@ -26,4 +29,5 @@ pub use signup_request::*;
 pub use signup_response::*;
 pub use twofa_code::TwoFACode;
 pub use user::*;
+pub use verify_mfa_request::VerifyMFARequestBody;
 pub use verify_token_request::*;

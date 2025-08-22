@@ -20,3 +20,9 @@ impl Default for TwoFACode {
         TwoFACode(rand::rng().random_range(100_000..=999_999).to_string())
     }
 }
+
+impl AsRef<str> for TwoFACode {
+    fn as_ref(&self) -> &str {
+        &self.0
+    }
+}

@@ -74,7 +74,7 @@ async fn should_return_206_if_valid_credentials_and_2fa_enabled() {
     assert_eq!(response.status().as_u16(), 201);
 
     let response = app.login(random_email.clone(), password.clone()).await;
-
+    assert_eq!(response.status().as_u16(), 206);
     assert_eq!(
         response
             .json::<TwoFactorAuthResponse>()

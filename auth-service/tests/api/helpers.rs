@@ -1,7 +1,7 @@
 use auth_service::app_router;
 
 use auth_service::services::TokenService;
-use auth_service::services::{HashmapTwoFACodeStore, HashsetRefreshStore};
+use auth_service::services::{HashmapTwoFACodeStore, HashsetRefreshStore, MockEmailClient};
 use reqwest::cookie::CookieStore;
 use reqwest::cookie::Jar;
 
@@ -14,7 +14,7 @@ use tokio::net::TcpListener;
 use tokio::spawn;
 use uuid::Uuid;
 
-use auth_service::app_state::{AppState, TwoFACodeStoreType};
+use auth_service::app_state::{AppState, EmailClientType, TwoFACodeStoreType};
 use auth_service::domain::SignupRequestBody;
 use auth_service::services::hashmap_user_store::HashmapUserStore;
 use auth_service::utils::Config;
@@ -57,6 +57,7 @@ pub struct TestApp {
     pub token_service: Arc<RwLock<TokenService>>,
     pub config: Arc<RwLock<Config>>,
     pub twofa_code_store: TwoFACodeStoreType,
+    pub email_client: EmailClientType,
 }
 
 impl TestApp {
@@ -86,12 +87,14 @@ impl TestApp {
             TokenService::new(config.clone(), Box::new(HashsetRefreshStore::default())).await,
         ));
         let twofa_code_store = Arc::new(RwLock::new(HashmapTwoFACodeStore::default()));
+        let email_client = Arc::new(RwLock::new(MockEmailClient::default()));
 
         let app_state = AppState::new(
             Arc::new(RwLock::new(user_store)),
             token_service.clone(),
             Arc::clone(&config),
             twofa_code_store.clone(),
+            email_client.clone(),
         );
         let listener = TcpListener::bind("127.0.0.1:0")
             .await
@@ -121,6 +124,7 @@ impl TestApp {
             token_service,
             config,
             twofa_code_store,
+            email_client,
         }
     }
 
@@ -205,6 +209,26 @@ impl TestApp {
             .send()
             .await
             .expect("Failed to execute verify token request.")
+    }
+
+    pub async fn post_verify_2fa(
+        &self,
+        email: String,
+        login_attempt_id: String,
+        mfa_code: String,
+    ) -> Response {
+        let body = Verify2FABody {
+            email,
+            login_attempt_id,
+            mfa_code,
+        };
+
+        self.http_client
+            .post(format!("{}/verify-2fa", &self.address))
+            .json(&body)
+            .send()
+            .await
+            .expect("Failed to execute request.")
     }
 }
 

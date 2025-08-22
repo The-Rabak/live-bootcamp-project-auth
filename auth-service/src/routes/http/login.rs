@@ -35,12 +35,19 @@ async fn handle_2fa_login(
     let login_attempt_id = LoginAttemptId::default();
     let two_fa_code = TwoFACode::default();
 
-    // TODO: Store the ID and code in our 2FA code store. Return `AuthAPIError::UnexpectedError` if the operation fails
     state
         .twofa_token_store
         .write()
         .await
-        .add_code(email.clone(), login_attempt_id.clone(), two_fa_code)
+        .add_code(email.clone(), login_attempt_id.clone(), two_fa_code.clone())
+        .await
+        .map_err(|_| LoginError::InternalServerError)?;
+
+    state
+        .email_client
+        .read()
+        .await
+        .send_email(email, "your 2fa code", two_fa_code.as_ref())
         .await
         .map_err(|_| LoginError::InternalServerError)?;
 
@@ -50,7 +57,7 @@ async fn handle_2fa_login(
         login_attempt_id: login_attempt_id.as_ref().to_owned(), // Add the generated login attempt ID
     }));
 
-    Ok((jar, (StatusCode::OK, response)))
+    Ok((jar, (StatusCode::PARTIAL_CONTENT, response)))
 }
 
 async fn handle_no_2fa_login(
