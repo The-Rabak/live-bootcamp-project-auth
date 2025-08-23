@@ -1,11 +1,13 @@
-use crate::helpers::{get_random_email, TestApp};
+use crate::helpers::{get_random_email, TestApp, TestContext};
 use auth_service::domain::LoginResponse;
 use auth_service::routes::TwoFactorAuthResponse;
+use test_context::test_context;
 
+#[test_context(TestContext)]
 #[tokio::test]
-async fn should_return_401_if_old_code() {
+async fn should_return_401_if_old_code(ctx: &mut TestContext) {
     // Call login twice. Then, attempt to call verify-fa with the 2FA code from the first login requet. This should fail.
-    let app = TestApp::new().await;
+    let app = &ctx.test_app;
     let email = get_random_email();
     let password = "Password123!".to_string();
     let requires_mfa = true;
@@ -18,7 +20,7 @@ async fn should_return_401_if_old_code() {
 
     // First login - this will generate a 2FA code
     let login_response_1 = app.login(email.clone(), password.clone()).await;
-    assert_eq!(login_response_1.status().as_u16(), 206);
+    assert_eq!(login_response_1.status().as_u16(), 206, "first assert");
 
     let first_login_response = login_response_1
         .json::<TwoFactorAuthResponse>()
@@ -37,7 +39,9 @@ async fn should_return_401_if_old_code() {
 
     // Second login - this will generate a new 2FA code and overwrite the first one
     let login_response_2 = app.login(email.clone(), password.clone()).await;
-    assert_eq!(login_response_2.status().as_u16(), 206);
+    let login_response_2_status = login_response_2.status().as_u16();
+    let login_response_2_body = login_response_2.text().await.unwrap();
+    assert_eq!(login_response_2_status, 206, "second assert");
 
     // Now try to verify 2FA with the old code from the first login
     let verify_response = app
@@ -47,9 +51,10 @@ async fn should_return_401_if_old_code() {
     assert_eq!(verify_response.status().as_u16(), 401);
 }
 
+#[test_context(TestContext)]
 #[tokio::test]
-async fn should_return_401_if_incorrect_credentials() {
-    let app = TestApp::new().await;
+async fn should_return_401_if_incorrect_credentials(ctx: &mut TestContext) {
+    let app = &ctx.test_app;
     let email = get_random_email();
     let login_attempt_id = String::from("lads1");
     let mfa_code = String::from("mfa");
@@ -58,10 +63,11 @@ async fn should_return_401_if_incorrect_credentials() {
     assert_eq!(response.status().as_u16(), 401);
 }
 
+#[test_context(TestContext)]
 #[tokio::test]
-async fn should_return_200_if_correct_code() {
+async fn should_return_200_if_correct_code(ctx: &mut TestContext) {
     // Make sure to assert the auth cookie gets set
-    let app = TestApp::new().await;
+    let app = &ctx.test_app;
     let email = get_random_email();
     let password = "Password123!".to_string();
     let requires_mfa = true;

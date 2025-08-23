@@ -105,7 +105,10 @@ impl BaseRepository<DbState<UserModel>, User> for SqlUserStore {
             Ok(_) => Ok(user_model),
             Err(e) => {
                 let e_string = e.to_string();
-                eprintln!("database error {}", &e);
+                if e_string.contains("UNIQUE constraint failed: users.email") {
+                    return Err(RepositoryError::AlreadyExists);
+                }
+
                 Err(RepositoryError::DatabaseError(e_string))
             }
         }

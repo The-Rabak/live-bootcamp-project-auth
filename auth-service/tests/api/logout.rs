@@ -1,8 +1,10 @@
-use crate::helpers::{get_random_email, TestApp};
+use crate::helpers::{get_random_email, TestApp, TestContext};
+use test_context::test_context;
 
+#[test_context(TestContext)]
 #[tokio::test]
-async fn should_return_401_if_authorization_header_missing() {
-    let app = TestApp::new().await;
+async fn should_return_401_if_authorization_header_missing(ctx: &mut TestContext) {
+    let app = &ctx.test_app;
 
     let response = app
         .http_client
@@ -14,9 +16,10 @@ async fn should_return_401_if_authorization_header_missing() {
     assert_eq!(response.status(), 401);
 }
 
+#[test_context(TestContext)]
 #[tokio::test]
-async fn should_return_401_if_invalid_token() {
-    let app = TestApp::new().await;
+async fn should_return_401_if_invalid_token(ctx: &mut TestContext) {
+    let app = &ctx.test_app;
 
     let response = app
         .http_client
@@ -29,9 +32,10 @@ async fn should_return_401_if_invalid_token() {
     assert_eq!(response.status(), 401);
 }
 
+#[test_context(TestContext)]
 #[tokio::test]
-async fn should_return_200_if_valid_token() {
-    let app = TestApp::new().await;
+async fn should_return_200_if_valid_token(ctx: &mut TestContext) {
+    let app = &ctx.test_app;
     let email = get_random_email();
 
     let issued = app

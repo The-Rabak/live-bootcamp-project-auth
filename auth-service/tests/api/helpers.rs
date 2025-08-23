@@ -1,7 +1,7 @@
 use auth_service::{app_router, get_db_pool};
 
-use auth_service::services::TokenService;
 use auth_service::services::{HashmapTwoFACodeStore, HashsetRefreshStore, MockEmailClient};
+use auth_service::services::{SqlUserStore, TokenService};
 use reqwest::cookie::CookieStore;
 use reqwest::cookie::Jar;
 
@@ -16,16 +16,19 @@ use uuid::Uuid;
 
 use auth_service::app_state::{AppState, EmailClientType, TwoFACodeStoreType};
 use auth_service::domain::SignupRequestBody;
-use auth_service::services::hashmap_user_store::HashmapUserStore;
+use auth_service::migrations;
 use auth_service::utils::Config;
 use std::sync::Arc;
+use test_context::AsyncTestContext;
 use tokio::sync::RwLock;
+use welds::connections::any::AnyClient;
 
 #[derive(Serialize)]
 pub struct LoginBody {
     pub email: String,
     pub password: String,
 }
+
 pub struct Verify2FABody {
     pub email: String,
     pub login_attempt_id: String,
@@ -50,6 +53,53 @@ pub struct VerifyJWTBody {
     pub token: String,
 }
 
+pub struct TestContext {
+    pub test_app: TestApp,
+    db_file_path: String,
+}
+
+impl AsyncTestContext for TestContext {
+    async fn setup() -> Self {
+        // Create a unique database file for this test to avoid parallel test conflicts
+        let unique_db_file = format!("data/test_{}.sqlite", Uuid::new_v4());
+        let test_app = TestApp::new_with_db_file(&unique_db_file).await;
+
+        // Run migrations in a blocking task to avoid trait bound issues
+        let db_client = test_app.db_client.clone();
+        tokio::task::spawn_blocking(move || {
+            tokio::runtime::Handle::current().block_on(async {
+                if let Err(e) = migrations::up(&db_client).await {
+                    eprintln!("Failed to run migrations: {:?}", e);
+                }
+            })
+        })
+        .await
+        .unwrap();
+
+        Self {
+            test_app,
+            db_file_path: unique_db_file,
+        }
+    }
+
+    async fn teardown(self) {
+        // Clean up database in a blocking task
+        let db_client = self.test_app.db_client.clone();
+        tokio::task::spawn_blocking(move || {
+            tokio::runtime::Handle::current().block_on(async {
+                if let Err(e) = migrations::down(&db_client).await {
+                    eprintln!("Failed to teardown migrations: {:?}", e);
+                }
+            })
+        })
+        .await
+        .unwrap();
+
+        // Clean up the unique database file
+        let _ = std::fs::remove_file(&self.db_file_path);
+    }
+}
+
 pub struct TestApp {
     pub address: String,
     pub http_client: Client,
@@ -58,11 +108,17 @@ pub struct TestApp {
     pub config: Arc<RwLock<Config>>,
     pub twofa_code_store: TwoFACodeStoreType,
     pub email_client: EmailClientType,
+    pub db_client: AnyClient,
 }
 
 impl TestApp {
     pub async fn new() -> Self {
-        let user_store = HashmapUserStore::new();
+        // Create a unique database file for this test
+        let unique_db_file = format!("data/test_{}.sqlite", Uuid::new_v4());
+        Self::new_with_db_file(&unique_db_file).await
+    }
+
+    pub async fn new_with_db_file(db_file_path: &str) -> Self {
         // Set up test environment variables
         std::env::set_var("JWT_ISSUER", "test_issuer");
         std::env::set_var("JWT_AUDIENCE", "test_audience");
@@ -80,6 +136,15 @@ impl TestApp {
         std::env::set_var("ACCESS_COOKIE_NAME", "access_token");
         std::env::set_var("REFRESH_COOKIE_NAME", "refresh_token");
 
+        // Create the database file if it doesn't exist
+        if let Some(parent) = std::path::Path::new(db_file_path).parent() {
+            std::fs::create_dir_all(parent).expect("Failed to create database directory");
+        }
+        std::fs::File::create(db_file_path).expect("Failed to create database file");
+
+        // Create the database URL from the file path
+        let db_url = format!("sqlite://{}", db_file_path);
+
         let config = Arc::new(RwLock::new(
             Config::default().expect("could not start config for tests"),
         ));
@@ -88,14 +153,16 @@ impl TestApp {
         ));
         let twofa_code_store = Arc::new(RwLock::new(HashmapTwoFACodeStore::default()));
         let email_client = Arc::new(RwLock::new(MockEmailClient::default()));
-        let db_client = get_db_pool(config.read().await.db_url()).await.unwrap();
+        let db_client = get_db_pool(&db_url).await.unwrap();
+        let user_store = SqlUserStore::new(db_client.clone());
+
         let app_state = AppState::new(
             Arc::new(RwLock::new(user_store)),
             token_service.clone(),
             Arc::clone(&config),
             twofa_code_store.clone(),
             email_client.clone(),
-            db_client,
+            db_client.clone(),
         );
         let listener = TcpListener::bind("127.0.0.1:0")
             .await
@@ -118,7 +185,7 @@ impl TestApp {
             .build()
             .expect("failed to build http client");
 
-        TestApp {
+        let test_app = TestApp {
             address,
             http_client: client,
             cookie_jar,
@@ -126,7 +193,10 @@ impl TestApp {
             config,
             twofa_code_store,
             email_client,
-        }
+            db_client,
+        };
+
+        test_app
     }
 
     pub async fn get_root(&self) -> reqwest::Response {
@@ -164,6 +234,7 @@ impl TestApp {
             .await
             .expect("Failed to execute login request.")
     }
+
     pub async fn verify_mfa(
         &self,
         email: String,

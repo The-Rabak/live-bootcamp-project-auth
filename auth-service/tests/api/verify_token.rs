@@ -1,8 +1,10 @@
-use crate::helpers::{get_random_email, TestApp};
+use crate::helpers::{get_random_email, TestApp, TestContext};
+use test_context::test_context;
 
+#[test_context(TestContext)]
 #[tokio::test]
-async fn should_return_422_if_malformed_input() {
-    let app = TestApp::new().await;
+async fn should_return_422_if_malformed_input(ctx: &mut TestContext) {
+    let app = &ctx.test_app;
     let jwt = String::from("malformed_jwt");
 
     let response = app
@@ -16,9 +18,10 @@ async fn should_return_422_if_malformed_input() {
     assert_eq!(response.status().as_u16(), 401);
 }
 
+#[test_context(TestContext)]
 #[tokio::test]
-async fn should_return_200_valid_token() {
-    let app = TestApp::new().await;
+async fn should_return_200_valid_token(ctx: &mut TestContext) {
+    let app = &ctx.test_app;
     let email = get_random_email();
 
     let issued = app
@@ -40,9 +43,10 @@ async fn should_return_200_valid_token() {
     assert_eq!(response.status().as_u16(), 200);
 }
 
+#[test_context(TestContext)]
 #[tokio::test]
-async fn should_return_401_if_invalid_token() {
-    let app = TestApp::new().await;
+async fn should_return_401_if_invalid_token(ctx: &mut TestContext) {
+    let app = &ctx.test_app;
     let invalid_token = "invalid.token.here";
 
     let response = app
@@ -56,9 +60,10 @@ async fn should_return_401_if_invalid_token() {
     assert_eq!(response.status().as_u16(), 401);
 }
 
+#[test_context(TestContext)]
 #[tokio::test]
-async fn should_return_401_if_revoked_session() {
-    let app = TestApp::new().await;
+async fn should_return_401_if_revoked_session(ctx: &mut TestContext) {
+    let app = &ctx.test_app;
     let email = get_random_email();
 
     let issued = app

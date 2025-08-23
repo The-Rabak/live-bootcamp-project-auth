@@ -1,9 +1,11 @@
-use crate::helpers::{get_random_email, TestApp};
+use crate::helpers::{get_random_email, TestApp, TestContext};
 use auth_service::domain::signup_response::SignupResponse;
+use test_context::test_context;
 
+#[test_context(TestContext)]
 #[tokio::test]
-async fn should_return_422_if_malformed_email() {
-    let app = TestApp::new().await;
+async fn should_return_422_if_malformed_email(ctx: &mut TestContext) {
+    let app = &ctx.test_app;
 
     let empty_email = String::new();
     let password = String::from("lads123!");
@@ -13,9 +15,10 @@ async fn should_return_422_if_malformed_email() {
     assert_eq!(response.status().as_u16(), 422, "Invalid email");
 }
 
+#[test_context(TestContext)]
 #[tokio::test]
-async fn should_return_422_if_malformed_password() {
-    let app = TestApp::new().await;
+async fn should_return_422_if_malformed_password(ctx: &mut TestContext) {
+    let app = &ctx.test_app;
 
     let empty_email = get_random_email();
     let password = String::new();
@@ -24,9 +27,10 @@ async fn should_return_422_if_malformed_password() {
     let response = app.signup(empty_email, password, requires_mfa).await;
     assert_eq!(response.status().as_u16(), 422, "Password is too short");
 }
+#[test_context(TestContext)]
 #[tokio::test]
-async fn should_return_201_if_fields_are_sent() {
-    let app = TestApp::new().await;
+async fn should_return_201_if_fields_are_sent(ctx: &mut TestContext) {
+    let app = &ctx.test_app;
 
     let random_email = get_random_email();
     let password = String::from("Ilads123!");
@@ -49,10 +53,11 @@ async fn should_return_201_if_fields_are_sent() {
     );
 }
 
+#[test_context(TestContext)]
 #[tokio::test]
-async fn should_return_409_if_email_already_exists() {
+async fn should_return_409_if_email_already_exists(ctx: &mut TestContext) {
     // Call the signup route twice. The second request should fail with a 409 HTTP status code
-    let app = TestApp::new().await;
+    let app = &ctx.test_app;
     let random_email = get_random_email();
     let password = String::from("Ilads123!");
 

@@ -7,5 +7,10 @@ pub async fn up(client: &dyn welds::TransactStart) -> Result<()> {
     Ok(())
 }
 
+pub async fn down(client: &dyn welds::TransactStart) -> Result<Option<String>> {
+    welds::migrations::down(client, "add_requires_mfa_to_users").await?;
+    welds::migrations::down(client, "create_table_users").await
+}
+
 mod add_requires_mfa_to_users;
 mod create_table_users;
