@@ -1,12 +1,14 @@
 use welds::prelude::*;
 
-#[derive(WeldsModel)]
+#[derive(WeldsModel, Clone)]
 #[welds(table = "users")]
 pub struct UserModel {
     #[welds(primary_key)]
-    pub id: i32,
+    pub id: i64,
     pub email: String,
     pub password_hash: String,
-    pub created_at: i32,
-    pub updated_at: i32,
+    #[welds(rename = "requires_2fa")]
+    pub requires_mfa: bool,
+    pub created_at: i64,
+    pub updated_at: i64,
 }

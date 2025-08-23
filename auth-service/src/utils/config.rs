@@ -19,6 +19,7 @@ pub struct Config {
     refresh_cookie_name: String,
     active_kid: String,
     db_url: String,
+    test_db_url: String,
 }
 
 impl Config {
@@ -52,6 +53,9 @@ impl Config {
     pub fn db_url(&self) -> &str {
         &self.db_url
     }
+    pub fn test_db_url(&self) -> &str {
+        &self.test_db_url
+    }
 
     pub fn default() -> Result<Self, ConfigError> {
         // Load .env in dev; no-op in prod if not present.
@@ -60,6 +64,7 @@ impl Config {
         let issuer = req_var("JWT_ISSUER")?;
         let audience = req_var("JWT_AUDIENCE")?;
         let db_url = req_var("DATABASE_URL")?;
+        let test_db_url = opt_var("TEST_DATABASE_URL").unwrap_or_else(|| "".into());
 
         let access_ttl_seconds = parse_i64("ACCESS_TTL_SECONDS")?;
         let refresh_ttl_seconds = parse_i64("REFRESH_TTL_SECONDS")?;
@@ -104,6 +109,7 @@ impl Config {
             refresh_cookie_name,
             active_kid,
             db_url,
+            test_db_url,
         })
     }
 }

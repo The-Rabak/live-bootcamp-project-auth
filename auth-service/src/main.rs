@@ -2,7 +2,7 @@ use auth_service::app_state::AppState;
 use auth_service::migrations;
 use auth_service::services::hashmap_user_store::HashmapUserStore;
 use auth_service::services::{
-    HashmapTwoFACodeStore, HashsetRefreshStore, MockEmailClient, TokenService,
+    HashmapTwoFACodeStore, HashsetRefreshStore, MockEmailClient, SqlUserStore, TokenService,
 };
 use auth_service::utils::Config;
 use auth_service::{get_db_pool, Application};
@@ -13,7 +13,6 @@ use welds::connections::any::AnyClient;
 #[tokio::main]
 async fn main() {
     env_logger::init();
-    let user_store = HashmapUserStore::new();
     let config = Arc::new(RwLock::new(
         Config::default().expect("Failed to load config"),
     ));
@@ -23,6 +22,7 @@ async fn main() {
     let twofa_code_store = Arc::new(RwLock::new(HashmapTwoFACodeStore::default()));
     let email_client = Arc::new(RwLock::new(MockEmailClient::default()));
     let db_client = get_configured_db_connection(config.read().await.db_url()).await;
+    let user_store = SqlUserStore::new(db_client.clone());
     let app_state = AppState::new(
         Arc::new(RwLock::new(user_store)),
         token_service,

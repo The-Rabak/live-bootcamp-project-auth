@@ -1,3 +1,4 @@
+use axum::async_trait;
 use std::collections::HashMap;
 
 use crate::domain::data_stores::UserStore;
@@ -22,7 +23,7 @@ impl HashmapUserStore {
     }
 }
 
-#[async_trait::async_trait]
+#[async_trait]
 impl UserStore for HashmapUserStore {
     async fn add_user(&mut self, user: User) -> Result<(), UserStoreError> {
         if let Some(_user) = self.users.get(&user.email) {
@@ -32,8 +33,11 @@ impl UserStore for HashmapUserStore {
         Ok(())
     }
 
-    async fn get_user(&self, email: Email) -> Result<&User, UserStoreError> {
-        self.users.get(&email).ok_or(UserStoreError::UserNotFound)
+    async fn get_user(&self, email: Email) -> Result<User, UserStoreError> {
+        self.users
+            .get(&email)
+            .ok_or(UserStoreError::UserNotFound)
+            .cloned()
     }
 
     async fn delete_user(&mut self, email: Email) -> Result<User, UserStoreError> {
@@ -91,7 +95,7 @@ mod tests {
         let retrieved_user = hashmap_user_store
             .get_user(Email::parse("lads@tst.com".to_string()).unwrap())
             .await;
-        assert_eq!(Ok(&user_validation), retrieved_user);
+        assert_eq!(Ok(user_validation), retrieved_user);
     }
 
     #[tokio::test]

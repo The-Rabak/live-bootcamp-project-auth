@@ -1,5 +1,6 @@
 pub mod banned_token_store;
 pub mod banned_token_store_err;
+pub mod base_repository;
 pub mod jwt_key_store;
 pub mod refresh_err;
 pub mod refresh_record;
@@ -11,6 +12,7 @@ pub mod user_store_err;
 
 pub use banned_token_store::*;
 pub use banned_token_store_err::*;
+pub use base_repository::*;
 pub use jwt_key_store::*;
 pub use refresh_err::RefreshError;
 pub use refresh_record::RefreshRecord;
