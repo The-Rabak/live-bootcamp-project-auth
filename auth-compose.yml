@@ -47,3 +47,5 @@ services:
       - lgr_redis_data:/data
     entrypoint: redis-server --appendonly yes
     restart: always
+    networks:
+      - live-bootcamp-project

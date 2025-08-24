@@ -35,6 +35,8 @@ jobs:
       - name: Build and test auth-service code
         working-directory: ./auth-service
         run: |
+          export POSTGRES_PASSWORD=${{ secrets.POSTGRES_PASSWORD }}
+          export DATABASE_URL="postgres://postgres:${POSTGRES_PASSWORD}@db:5432"
           export JWT_SECRET=lads
           cargo build --verbose
           cargo test --verbose
