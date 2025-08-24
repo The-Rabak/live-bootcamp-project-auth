@@ -15,6 +15,8 @@ services:
       context: ./auth-service
     image: legols122/auth-service
     restart: "always" # automatically restart container when server crashes
+    environment:
+      DATABASE_URL: ${DATABASE_URL} # needed for ci
     env_file:
       - path: "./auth-service/.env"
         required: false
