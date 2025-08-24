@@ -5,6 +5,8 @@ networks:
 volumes:
   db:
     driver: local
+  lgr_redis_data:
+    driver: local
 
 services:
   auth-service:
@@ -33,3 +35,13 @@ services:
       - db:/var/lib/postgresql/data
     networks:
       - live-bootcamp-project
+
+  redis:
+    container_name: redis
+    image: redis:latest
+    ports:
+      - "6379:6379"
+    volumes:
+      - lgr_redis_data:/data
+    entrypoint: redis-server --appendonly yes
+    restart: always
