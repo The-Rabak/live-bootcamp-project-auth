@@ -8,6 +8,26 @@ use serde::Deserialize;
 use thiserror::Error;
 
 #[derive(Clone)]
+/// Runtime configuration container loaded from environment variables.
+///
+/// Mandatory environment variables:
+/// - JWT_ISSUER
+/// - JWT_AUDIENCE
+/// - DATABASE_URL
+/// - REDIS_HOST
+/// - ACCESS_TTL_SECONDS
+/// - REFRESH_TTL_SECONDS
+/// - REFRESH_HASH_KEY_B64 (base64, must decode to 32 bytes)
+/// - JWT_ACTIVE_KID
+/// - JWT_HS256_KEYS_JSON (JSON array of { kid, secret_b64 }, each secret >= 32 bytes)
+///
+/// Optional environment variables:
+/// - ACCESS_COOKIE_NAME (default: "access")
+/// - REFRESH_COOKIE_NAME (default: "refresh")
+/// - TEST_DATABASE_URL (used in test contexts)
+///
+/// The `default()` constructor loads `.env` (if present) for local development
+/// and performs validation (length checks, duplicate KIDs, active KID presence).
 pub struct Config {
     issuer: String,
     audience: String,
@@ -62,6 +82,25 @@ impl Config {
         &self.test_db_url
     }
 
+    /// Construct a validated `Config` from the current process environment.
+    ///
+    /// Behavior:
+    /// - Loads a `.env` file if present (development convenience)
+    /// - Reads mandatory variables (see struct docs)
+    /// - Decodes & validates refresh hash key (must be exactly 32 bytes)
+    /// - Parses HS256 key JSON, enforcing:
+    ///   * Non-empty key list
+    ///   * Each secret base64 decodes successfully
+    ///   * Each secret length >= 32 bytes
+    ///   * No duplicate `kid`
+    ///   * Active KID exists in provided key list
+    /// - Applies defaults for optional cookie names / TEST_DATABASE_URL
+    ///
+    /// Errors:
+    /// - `ConfigError::Missing` for absent required variables
+    /// - `ConfigError::Invalid` for parsing / logical validation failures
+    /// - `ConfigError::Decode` for base64 decode errors
+    /// - `ConfigError::WrongLen` for incorrect key lengths
     pub fn default() -> Result<Self, ConfigError> {
         // Load .env in dev; no-op in prod if not present.
         let _ = dotenv().ok();

@@ -1,3 +1,4 @@
+#![cfg(feature = "redis-tests")]
 use std::sync::Arc;
 
 use auth_service::domain::{hash_refresh, RefreshError, RefreshRecord, RefreshStore};

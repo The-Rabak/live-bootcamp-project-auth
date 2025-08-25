@@ -5,6 +5,12 @@ edition = "2021"
 
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
+[features]
+# Default build runs all code but skips redis-dependent integration tests unless explicitly enabled.
+default = []
+# Enable tests that require a running Redis instance (e.g., redis_refresh_store_tests, redis_service_tests)
+redis-tests = []
+
 [dependencies]
 axum = "0.7.4"
 tokio = { version = "1.36", features = ["full"] }

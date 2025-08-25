@@ -100,6 +100,7 @@ impl AsyncTestContext for TestContext {
     }
 }
 
+#[allow(dead_code)]
 pub struct TestApp {
     pub address: String,
     pub http_client: Client,
@@ -111,6 +112,7 @@ pub struct TestApp {
     pub db_client: AnyClient,
 }
 
+#[allow(dead_code)]
 impl TestApp {
     pub async fn new() -> Self {
         // Create a unique database file for this test
@@ -135,6 +137,9 @@ impl TestApp {
         );
         std::env::set_var("ACCESS_COOKIE_NAME", "access_token");
         std::env::set_var("REFRESH_COOKIE_NAME", "refresh_token");
+        // Required because Config::default() mandates REDIS_HOST even though
+        // these API tests use the in-memory refresh store implementation.
+        std::env::set_var("REDIS_HOST", "127.0.0.1:6379");
 
         // Create the database file if it doesn't exist
         if let Some(parent) = std::path::Path::new(db_file_path).parent() {
@@ -271,18 +276,18 @@ impl TestApp {
         response
     }
 
+    #[allow(dead_code)]
     pub async fn verify_token(&self, jwt_token: String) -> Response {
         let body = VerifyJWTBody { token: jwt_token };
-
         self.http_client
             .post(&format!("{}/verify-token", &self.address))
             .json(&body)
-            .header("Content-Type", "application/json")
             .send()
             .await
             .expect("Failed to execute verify token request.")
     }
 
+    #[allow(dead_code)]
     pub async fn post_verify_2fa(
         &self,
         email: String,
@@ -294,13 +299,12 @@ impl TestApp {
             login_attempt_id,
             mfa_code,
         };
-
         self.http_client
-            .post(format!("{}/verify-2fa", &self.address))
+            .post(&format!("{}/verify-2fa", &self.address))
             .json(&body)
             .send()
             .await
-            .expect("Failed to execute request.")
+            .expect("Failed to execute post verify 2FA request.")
     }
 }
 
