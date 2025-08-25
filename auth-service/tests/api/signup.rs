@@ -1,4 +1,4 @@
-use crate::helpers::{get_random_email, TestApp, TestContext};
+use crate::helpers::{get_random_email, TestContext};
 use auth_service::domain::signup_response::SignupResponse;
 use test_context::test_context;
 

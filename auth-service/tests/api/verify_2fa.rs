@@ -1,4 +1,4 @@
-use crate::helpers::{get_random_email, TestApp, TestContext};
+use crate::helpers::{get_random_email, TestContext};
 use auth_service::domain::LoginResponse;
 use auth_service::routes::TwoFactorAuthResponse;
 use test_context::test_context;
@@ -40,7 +40,7 @@ async fn should_return_401_if_old_code(ctx: &mut TestContext) {
     // Second login - this will generate a new 2FA code and overwrite the first one
     let login_response_2 = app.login(email.clone(), password.clone()).await;
     let login_response_2_status = login_response_2.status().as_u16();
-    let login_response_2_body = login_response_2.text().await.unwrap();
+    let _login_response_2_body = login_response_2.text().await.unwrap();
     assert_eq!(login_response_2_status, 206, "second assert");
 
     // Now try to verify 2FA with the old code from the first login

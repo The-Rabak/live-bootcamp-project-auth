@@ -1,4 +1,5 @@
 pub mod access_claims;
+pub mod as_redis_hash_args;
 pub mod data_stores;
 pub mod email;
 pub mod email_client;
@@ -17,6 +18,7 @@ pub mod verify_mfa_request;
 pub mod verify_token_request;
 
 pub use access_claims::*;
+pub use as_redis_hash_args::AsRedisHashArgs;
 pub use data_stores::*;
 pub use email::*;
 pub use email_client::*;

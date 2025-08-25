@@ -196,6 +196,7 @@ dependencies = [
  "dotenvy",
  "env_logger",
  "futures",
+ "hex",
  "jsonwebtoken",
  "lazy_static",
  "once_cell",
@@ -450,6 +451,7 @@ dependencies = [
  "iana-time-zone",
  "js-sys",
  "num-traits",
+ "serde",
  "wasm-bindgen",
  "windows-link",
 ]

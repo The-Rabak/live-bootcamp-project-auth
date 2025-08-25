@@ -1,8 +1,9 @@
 use auth_service::app_state::AppState;
 use auth_service::migrations;
-use auth_service::services::hashmap_user_store::HashmapUserStore;
+
 use auth_service::services::{
-    HashmapTwoFACodeStore, HashsetRefreshStore, MockEmailClient, SqlUserStore, TokenService,
+    HashmapTwoFACodeStore, MockEmailClient, RedisRefreshStore, RedisService, SqlUserStore,
+    TokenService,
 };
 use auth_service::utils::Config;
 use auth_service::{get_db_pool, Application};
@@ -17,7 +18,13 @@ async fn main() {
         Config::default().expect("Failed to load config"),
     ));
     let token_service = Arc::new(RwLock::new(
-        TokenService::new(config.clone(), Box::new(HashsetRefreshStore::default())).await,
+        TokenService::new(
+            config.clone(),
+            Box::new(RedisRefreshStore::new(Arc::new(RedisService::new(
+                config.read().await.redis_host(),
+            )))),
+        )
+        .await,
     ));
     let twofa_code_store = Arc::new(RwLock::new(HashmapTwoFACodeStore::default()));
     let email_client = Arc::new(RwLock::new(MockEmailClient::default()));

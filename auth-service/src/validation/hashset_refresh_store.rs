@@ -1,4 +1,3 @@
-use async_trait::async_trait;
 use chrono::{DateTime, Duration, Utc};
 use std::collections::{HashMap, HashSet};
 use uuid::Uuid;
@@ -13,9 +12,8 @@ pub struct HashsetRefreshStore {
     revoked_sessions: HashSet<Uuid>,
 }
 
-#[async_trait]
 impl RefreshStore for HashsetRefreshStore {
-    async fn insert_initial(&mut self, record: RefreshRecord) -> Result<(), RefreshError> {
+    fn insert_initial(&mut self, record: RefreshRecord) -> Result<(), RefreshError> {
         if self.by_hash.contains_key(&record.token_hash) {
             return Err(RefreshError::Internal);
         }
@@ -23,7 +21,7 @@ impl RefreshStore for HashsetRefreshStore {
         Ok(())
     }
 
-    async fn rotate(
+    fn rotate(
         &mut self,
         presented_plain: &str,
         new_plain: &str,
@@ -31,8 +29,8 @@ impl RefreshStore for HashsetRefreshStore {
         ttl: Duration,
         hash_key: &[u8; 32],
     ) -> Result<(RefreshRecord, RefreshRecord), RefreshError> {
-        let old_hash = hash_refresh(hash_key, presented_plain).await;
-        let new_hash = hash_refresh(hash_key, new_plain).await;
+        let old_hash = hash_refresh(hash_key, presented_plain);
+        let new_hash = hash_refresh(hash_key, new_plain);
 
         let mut old = match self.by_hash.get(&old_hash) {
             Some(r) => r.clone(),
@@ -47,17 +45,13 @@ impl RefreshStore for HashsetRefreshStore {
         }
         if old.replaced_by_hash.is_some() || old.used_at.is_some() {
             // Reuse: someone presented an already-used refresh token.
-            self.revoke_session_internal(old.session_id, now).await;
+            self.revoke_session_internal(old.session_id, now);
             return Err(RefreshError::ReuseDetected);
         }
 
         // Mark the old as used and replaced-by.
         old.used_at = Some(now);
         old.replaced_by_hash = Some(new_hash);
-
-        // Persist the updated old record back into the map so subsequent reuse attempts
-        // see it as already used and replaced (enables correct ReuseDetected behavior).
-        self.by_hash.insert(old_hash, old.clone());
 
         let new_record = RefreshRecord {
             token_hash: new_hash,
@@ -75,11 +69,11 @@ impl RefreshStore for HashsetRefreshStore {
         Ok((old, new_record))
     }
 
-    async fn revoke_session(&mut self, session_id: Uuid, now: DateTime<Utc>) {
-        self.revoke_session_internal(session_id, now).await;
+    fn revoke_session(&mut self, session_id: Uuid, now: DateTime<Utc>) {
+        self.revoke_session_internal(session_id, now);
     }
 
-    async fn revoke_session_internal(&mut self, session_id: Uuid, now: DateTime<Utc>) {
+    fn revoke_session_internal(&mut self, session_id: Uuid, now: DateTime<Utc>) {
         self.revoked_sessions.insert(session_id);
         for r in self.by_hash.values_mut() {
             if r.session_id == session_id && r.revoked_at.is_none() {
@@ -88,7 +82,7 @@ impl RefreshStore for HashsetRefreshStore {
         }
     }
 
-    async fn is_session_revoked(&self, session_id: Uuid) -> bool {
+    fn is_session_revoked(&self, session_id: Uuid) -> bool {
         self.revoked_sessions.contains(&session_id)
     }
 }

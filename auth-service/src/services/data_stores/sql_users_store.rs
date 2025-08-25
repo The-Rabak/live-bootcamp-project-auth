@@ -44,7 +44,7 @@ impl SqlUserStore {
             Ok(password_hash)
         })
         .await
-        .map_err(|e| RepositoryError::UnexpectedError)?
+        .map_err(|_e| RepositoryError::UnexpectedError)?
     }
 
     // Helper method to verify passwords
@@ -62,7 +62,7 @@ impl SqlUserStore {
             }
         })
         .await
-        .map_err(|e| RepositoryError::UnexpectedError)?
+        .map_err(|_e| RepositoryError::UnexpectedError)?
     }
 
     // Convert domain User to database UserModel
@@ -206,7 +206,7 @@ impl FindableRepository<DbState<UserModel>, User, UserFindCriteria> for SqlUserS
 
     async fn find_all_by(
         &self,
-        criteria: UserFindCriteria,
+        _criteria: UserFindCriteria,
     ) -> Result<Vec<DbState<UserModel>>, RepositoryError> {
         // TODO: Implement search for multiple users by criteria
         println!("TODO: Implement find all users by criteria");
@@ -262,7 +262,7 @@ impl UserStore for SqlUserStore {
         let mut user = self.find_by(criteria).await.map_err(UserStoreError::from)?;
         user.delete(&self.client)
             .await
-            .map_err(|e| UserStoreError::UnexpectedError)?;
+            .map_err(|_e| UserStoreError::UnexpectedError)?;
 
         self.from_user_model(user.into_inner())
             .map_err(UserStoreError::from)
